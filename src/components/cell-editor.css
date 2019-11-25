@@ -1,0 +1,88 @@
+.cell-editor {
+    display: block;
+    border: 1px solid black;
+    height: 521px;
+    flex: 1 auto;
+    overflow-y: auto;
+    box-sizing: border-box;
+    background-color: #ddd;
+}
+.cell-editor-input-group {
+    margin: 1em;
+}
+.cell-editor-input-group-right {
+    float: right;
+    margin: 1em;
+}
+.cell-editor-file-drop-area {
+    border-radius: 8px;
+    padding: 2em;
+    border: 2px dashed blue;
+    background-color: white;
+    text-align: center;
+}
+.cell-editor-file-drop-area-targeted {
+    border-style: solid;
+    opacity: 0.8;
+}
+.cell-editor-file-entry {
+    display: inline-block;
+    position: relative;
+    margin: 0.25em;
+    padding: 0.5em;
+    padding-right: 2rem;
+    background: white;
+    border: 1px dashed black;
+    border-radius: 8px;
+    cursor: pointer;
+}
+.cell-editor-file-entry:hover {
+    border-style: solid;
+}
+.cell-editor-file-entry:active {
+    opacity: 0.8;
+}
+
+.cell-editor-file-entry-delete-btn::before,
+.cell-editor-file-entry-delete-btn::after {
+    content: '';
+    position: absolute;
+    width: 2px;
+    height: 12px;
+    left: 8px;
+    top: 0;
+    background-color: #e00;
+}
+.cell-editor-file-entry-delete-btn::after {
+    transform: rotate(45deg);
+}
+.cell-editor-file-entry-delete-btn::before {
+    transform: rotate(-45deg);
+}
+.cell-editor-file-entry-delete-btn {
+    position: absolute;
+    border: 0;
+    color: #E00;
+    font-size: 4rem;
+    background: 0;
+    cursor: pointer;
+    height: 15px;
+    width: 15px;
+    top: 8px;
+    right: 8px;;
+}
+.cell-editor-sound-bank {
+    margin: 0 -0.25em;
+}
+
+.checkbox-horizontal-group {
+    display: flex;
+    justify-content: center;
+}
+.checkbox-horizontal-group > label {
+    display: inline-block;
+    flex: 1 auto;
+    max-width: 100px;
+    margin:  0 1em;
+    text-align: center;
+}

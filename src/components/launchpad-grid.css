@@ -1,0 +1,33 @@
+.launchpad-grid {
+    display: table;
+    position: relative;
+    border-collapse: collapse;
+    min-width: 521px;
+    box-sizing: border-box;
+}
+.launchpad-grid-row {
+    display: table-row;
+}
+.launchpad-grid-cell  {
+    display: table-cell;
+    width: 64px;
+    height: 64px;
+    border: 1px solid black;
+    background-color: gray;
+}
+.launchpad-grid-cell-sound:before  {
+    border: 1px dotted yellow;
+    content: '';
+    width: 64px;
+    height: 64px;
+    display: block;
+    position: absolute;
+    margin: -1px;
+}
+.launchpad-grid-selector  {
+    border: 2px dashed red;
+    display: block;
+    position: absolute;
+    pointer-events: none;
+    margin: 0;
+}
