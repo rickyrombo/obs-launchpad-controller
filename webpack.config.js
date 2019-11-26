@@ -1,7 +1,12 @@
 const path = require('path');
 const fs = require('fs');
 const HtmlWebpackPlugin = require('html-webpack-plugin');
-const CopyWebpackPlugin = require('copy-webpack-plugin')
+const CopyWebpackPlugin = require('copy-webpack-plugin');
+if (!fs.existsSync('./ssl-gen/https-config.gen.js')) {
+  console.error("https-config.gen.js missing. Please see readme on how to generate the certs needed for SSL")
+}
+
+const HttpsSettings = require('./ssl-gen/https-config.gen.js');
 
 module.exports = {
   mode: 'development',
@@ -30,10 +35,7 @@ module.exports = {
      port: 443,
      contentBase: './dist',
      index: 'index.html',
-     https: {
-       key: fs.readFileSync('C:\\Users\\me\\localhost_key.pem'),
-       cert: fs.readFileSync('C:\\Users\\me\\localhost.crt')
-     }
+     https: HttpsSettings
    },
   plugins: [
     new HtmlWebpackPlugin({
