@@ -3,6 +3,7 @@
     position: relative;
     border-collapse: collapse;
     min-width: 521px;
+    width: 521px;
     box-sizing: border-box;
 }
 .launchpad-grid-row {
@@ -24,6 +25,10 @@
     position: absolute;
     margin: -1px;
 }
+.launchpad-grid-cell-highlight {
+    background-color: yellow;
+}
+
 .launchpad-grid-selector  {
     border: 2px dashed red;
     display: block;

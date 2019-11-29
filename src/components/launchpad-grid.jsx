@@ -17,14 +17,30 @@ function getColorPreviewStyles(colorCode) {
     }
 }
 
-export const LaunchpadGridCell = ({sound, color, x, y, onDragStart, onDragOver}) => {
+export const LaunchpadGridCell = ({sound, color, x, y, onMouseDragStart, onMouseDragOver, onActionDropped}) => {
+    const [highlight, setHighlight] = useState(false);
     const spritePosition = color ? getColorPreviewStyles(color - 1) : {};
     let classNames = [
         "launchpad-grid-cell",
-        (sound) ? "launchpad-grid-cell-sound" : ""
+        (sound) ? "launchpad-grid-cell-sound" : "",
+        (highlight) ? "launchpad-grid-cell-highlight" : ""
     ];
-    return <div onMouseDown={() => onDragStart(x, y)} 
-                onMouseOver={() => onDragOver(x, y)}
+    function onDrop(e) {
+        if (!!e.dataTransfer) {
+            e.preventDefault();
+            const data = e.dataTransfer.getData('application/json');
+            const {action, plugin} = data ? JSON.parse(data) : {}
+            if (action)
+                onActionDropped({x, y, plugin, action});
+        }
+        setHighlight(false);
+    }
+    return <div onMouseDown={() => onMouseDragStart(x, y)} 
+                onMouseOver={() => onMouseDragOver(x, y)}
+                onDragEnter={(e) => { setHighlight(true); e.preventDefault(); return false; }}
+                onDragLeave={() => setHighlight(false)}
+                onDragOver={(e) => e.preventDefault()}
+                onDrop={(e) => onDrop(e)}
                 className={classNames.join(" ")} 
                 style={{...spritePosition}}>
             </div>
@@ -51,7 +67,7 @@ export const LaunchpadGridSelector = ({a, b, gridSize}) => {
     return ''
 }
 
-const LaunchpadGrid = ({cells, selectedRegion, setSelectedRegion}) => {
+const LaunchpadGrid = ({cells, selectedRegion, setSelectedRegion, setButtonAction}) => {
     const width = 8;
     const height = 8;
     /**
@@ -76,13 +92,13 @@ const LaunchpadGrid = ({cells, selectedRegion, setSelectedRegion}) => {
         setSelectedRegion({o, d})
     }
     const mouseListeners = {
-        onDragStart: (x, y) => {
+        onMouseDragStart: (x, y) => {
             if (mouseHeld) return;
             setOrigin({x, y})
             setDestination({x, y})
             setMouseHeld(true)
         },
-        onDragOver: (x, y) => {
+        onMouseDragOver: (x, y) => {
             if (!mouseHeld) return;
             setDestination({x, y})
         },
@@ -128,6 +144,14 @@ const LaunchpadGrid = ({cells, selectedRegion, setSelectedRegion}) => {
             updateSelectedRegion();
         }
     }
+
+    function handleActionDrop({x, y, plugin, action}) {
+        setOrigin({x, y}); 
+        setDestination({x, y});
+        setButtonAction({x, y, plugin, action})
+        setSelectedRegion({o: {x, y}, d: {x, y} })
+    }
+
     return <div className="launchpad-grid" onMouseUp={onMouseUp} onKeyUp={onKeyUp} onKeyDown={onKeyDown} tabIndex="0">
         {Array(height).fill().map((_, y) => 
             <div key={y} className="launchpad-grid-row">
@@ -135,6 +159,7 @@ const LaunchpadGrid = ({cells, selectedRegion, setSelectedRegion}) => {
                     /* subtract 1 from y because top row is y=-1 */
                     <LaunchpadGridCell {...mouseListeners} key={positionToIndex({x, y})}
                         {...cells[positionToIndex({x, y})] }
+                        onActionDropped={handleActionDrop}
                         x={x} y={y} />
                 )}
             </div>

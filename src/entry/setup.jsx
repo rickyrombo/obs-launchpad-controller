@@ -13,51 +13,51 @@ if (window.matchMedia('(display-mode: standalone)').matches) {
     window.resizeTo(1024, 521 + 42);
 }
 
-const lp = new Launchpad({debug: false})
-lp.connect().then(() => {
-    function updateLaunchpadLights() {
-        store.getState().cells.forEach(({color}, index) => {
-            const {x, y} = indexToPosition(index);
-            lp.setButtonColor(x, y, color ||  0)
-        })
-    }
-    store.subscribe(updateLaunchpadLights)
-    updateLaunchpadLights()
+// const lp = new Launchpad({debug: false})
+// lp.connect().then(() => {
+//     function updateLaunchpadLights() {
+//         store.getState().cells.forEach(({color}, index) => {
+//             const {x, y} = indexToPosition(index);
+//             lp.setButtonColor(x, y, color ||  0)
+//         })
+//     }
+//     store.subscribe(updateLaunchpadLights)
+//     updateLaunchpadLights()
 
-    let audioSources = {}
-    lp.on(Events.BUTTON_PRESSED, async (x, y) => {
-        const index = positionToIndex({x, y});
-        const cell = store.getState().cells[index]
-        if (cell.sound) {
-            getFileFromSandbox(cell.sound).then((file) => {
-                const blobURL = URL.createObjectURL(file);
-                const existingAudio = audioSources[index];
-                if (existingAudio && cell.secondClickAction && cell.secondClickAction != 'Layer') {
-                    if (cell.secondClickAction == 'Stop') {
-                        existingAudio.pause()
-                        delete audioSources[index];
-                    } else if (cell.secondClickAction == 'Restart') {
-                        existingAudio.pause();
-                        existingAudio.currentTime = 0;
-                        existingAudio.play();
-                    }
-                } else {
-                    const audio = new Audio(blobURL);
-                    audioSources[index] = audio;
-                    audio.play()
-                    lp.pulseButtonColor(x, y, cell.color);
-                    audio.onpause = () => {                    
-                        lp.setButtonColor(x, y, cell.color);
-                    }
-                }
-            })
-        }
-    });
+//     let audioSources = {}
+//     lp.on(Events.BUTTON_PRESSED, async (x, y) => {
+//         const index = positionToIndex({x, y});
+//         const cell = store.getState().cells[index]
+//         if (cell.sound) {
+//             getFileFromSandbox(cell.sound).then((file) => {
+//                 const blobURL = URL.createObjectURL(file);
+//                 const existingAudio = audioSources[index];
+//                 if (existingAudio && cell.secondClickAction && cell.secondClickAction != 'Layer') {
+//                     if (cell.secondClickAction == 'Stop') {
+//                         existingAudio.pause()
+//                         delete audioSources[index];
+//                     } else if (cell.secondClickAction == 'Restart') {
+//                         existingAudio.pause();
+//                         existingAudio.currentTime = 0;
+//                         existingAudio.play();
+//                     }
+//                 } else {
+//                     const audio = new Audio(blobURL);
+//                     audioSources[index] = audio;
+//                     audio.play()
+//                     lp.pulseButtonColor(x, y, cell.color);
+//                     audio.onpause = () => {                    
+//                         lp.setButtonColor(x, y, cell.color);
+//                     }
+//                 }
+//             })
+//         }
+//     });
 
-    window.addEventListener('beforeunload', () => {
-        lp.setAllColor(0);
-    })
-})
+//     window.addEventListener('beforeunload', () => {
+//         lp.setAllColor(0);
+//     })
+// })
 
 ReactDOM.render(
 <Provider store={store}>

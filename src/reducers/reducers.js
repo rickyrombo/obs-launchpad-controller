@@ -1,5 +1,5 @@
 import { createReducer, combineReducers } from '@reduxjs/toolkit'
-import { setSelectedRegion, changeCellSettings, addFile, removeFile } from '../actions/actions'
+import { setSelectedRegion, changeCellSettings, addFile, removeFile, setButtonAction } from '../actions/actions'
 import { positionToIndex } from '../helpers'
 
 export const cells = createReducer(Array(81).fill({}), {
@@ -20,6 +20,10 @@ export const cells = createReducer(Array(81).fill({}), {
             }
             return cell;
         });
+    },
+    [setButtonAction]: (state, {payload}) => {
+        state[positionToIndex(payload)].pluginAction = { plugin: payload.plugin, action: payload.action };
+        state[positionToIndex(payload)].pluginActionOptions = {};
     },
     [removeFile]: (state, action) => {
         state.forEach((cell) => {

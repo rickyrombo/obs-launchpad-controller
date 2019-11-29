@@ -1,7 +1,7 @@
 let CACHE_NAME = 'static-cache-v1';
 
 function doNotCache(url) {
-    return url.includes('sockjs') || url.includes('chrome-extension')
+    return true || url.includes('sockjs') || url.includes('chrome-extension')
 }
 
 // Always read from cache first

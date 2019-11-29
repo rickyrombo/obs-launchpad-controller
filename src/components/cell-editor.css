@@ -1,20 +1,13 @@
 .cell-editor {
     display: block;
-    border: 1px solid black;
-    height: 521px;
     flex: 1 auto;
     overflow-y: auto;
     box-sizing: border-box;
     background-color: #ddd;
+    padding: 1em;
+    width: 521px;
 }
-.cell-editor-input-group {
-    margin: 1em;
-}
-.cell-editor-input-group-right {
-    float: right;
-    margin: 1em;
-}
-.cell-editor-file-drop-area {
+/* .cell-editor-file-drop-area {
     border-radius: 8px;
     padding: 2em;
     border: 2px dashed blue;
@@ -74,7 +67,7 @@
 .cell-editor-sound-bank {
     margin: 0 -0.25em;
 }
-
+ */
 .checkbox-horizontal-group {
     display: flex;
     justify-content: center;
@@ -86,3 +79,12 @@
     margin:  0 1em;
     text-align: center;
 }
+
+.input-group {
+    display: flex;
+    margin: 1em 0;
+    min-height: 24px;
+    vertical-align: bottom;
+    justify-content: space-between;
+}
+.label { flex: 1; display: flex; justify-content: space-between; }

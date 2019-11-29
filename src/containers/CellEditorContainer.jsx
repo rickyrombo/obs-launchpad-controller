@@ -6,7 +6,6 @@ const mapStateToProps = state => {
     const selected = state.cells.filter(cell => cell.isSelected)
     return {
         cells: selected,
-        files: state.files
     }
 }
 const mapDispatchToProps = dispatch => {

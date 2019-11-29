@@ -1,5 +1,5 @@
 import { connect } from 'react-redux'
-import { setSelectedRegion } from '../actions/actions'
+import { setSelectedRegion, setButtonAction } from '../actions/actions'
 import LaunchpadGrid from '../components/launchpad-grid'
 
 
@@ -11,7 +11,8 @@ const mapStateToProps = state => {
 }
 const mapDispatchToProps = dispatch => {
     return {
-        setSelectedRegion: ({o, d}) => dispatch(setSelectedRegion({o, d}))
+        setSelectedRegion: ({o, d}) => dispatch(setSelectedRegion({o, d})),
+        setButtonAction: ({x, y, plugin, action}) => dispatch(setButtonAction({x, y, plugin, action}))
     }
 }
 const LaunchpadGridContainer = connect(mapStateToProps, mapDispatchToProps)(LaunchpadGrid)
