@@ -4,87 +4,21 @@
     overflow-y: auto;
     box-sizing: border-box;
     background-color: #ddd;
+    border-right: 1px solid black;
     padding: 1em;
     width: 521px;
 }
-/* .cell-editor-file-drop-area {
-    border-radius: 8px;
-    padding: 2em;
-    border: 2px dashed blue;
-    background-color: white;
-    text-align: center;
+.cell-editor-options {
+    border: 1px solid #ccc;
 }
-.cell-editor-file-drop-area-targeted {
-    border-style: solid;
-    opacity: 0.8;
-}
-.cell-editor-file-entry {
-    display: inline-block;
-    position: relative;
-    margin: 0.25em;
-    padding: 0.5em;
-    padding-right: 2rem;
-    background: white;
-    border: 1px dashed black;
-    border-radius: 8px;
-    cursor: pointer;
-}
-.cell-editor-file-entry:hover {
-    border-style: solid;
-}
-.cell-editor-file-entry:active {
-    opacity: 0.8;
-}
-
-.cell-editor-file-entry-delete-btn::before,
-.cell-editor-file-entry-delete-btn::after {
-    content: '';
-    position: absolute;
-    width: 2px;
-    height: 12px;
-    left: 8px;
-    top: 0;
-    background-color: #e00;
-}
-.cell-editor-file-entry-delete-btn::after {
-    transform: rotate(45deg);
-}
-.cell-editor-file-entry-delete-btn::before {
-    transform: rotate(-45deg);
-}
-.cell-editor-file-entry-delete-btn {
-    position: absolute;
-    border: 0;
-    color: #E00;
-    font-size: 4rem;
-    background: 0;
-    cursor: pointer;
-    height: 15px;
-    width: 15px;
-    top: 8px;
-    right: 8px;;
-}
-.cell-editor-sound-bank {
-    margin: 0 -0.25em;
-}
- */
-.checkbox-horizontal-group {
-    display: flex;
-    justify-content: center;
-}
-.checkbox-horizontal-group > label {
-    display: inline-block;
-    flex: 1 auto;
-    max-width: 100px;
-    margin:  0 1em;
-    text-align: center;
-}
-
 .input-group {
     display: flex;
-    margin: 1em 0;
+    padding: 0.5em;
     min-height: 24px;
     vertical-align: bottom;
     justify-content: space-between;
+}
+.input-group:nth-child(even) {
+    background-color: #ccc;
 }
 .label { flex: 1; display: flex; justify-content: space-between; }

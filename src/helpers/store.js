@@ -1,4 +1,4 @@
-import storage from 'redux-persist/lib/storage'
+import localforage from 'localforage/dist/localforage'
 import thunk from 'redux-thunk'
 import autoMergeLevel1 from 'redux-persist/es/stateReconciler/autoMergeLevel1'
 import { persistStore, persistReducer } from 'redux-persist'
@@ -8,7 +8,7 @@ import rootReducer from '../reducers/reducers'
 export const persistConfig = {
     key: ['cells', 'files', 'selectedRegion'],
     version: 2,
-    storage,
+    storage: localforage,
     stateReconciler: autoMergeLevel1
 }
 

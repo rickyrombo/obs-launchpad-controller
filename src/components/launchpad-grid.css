@@ -5,6 +5,7 @@
     min-width: 521px;
     width: 521px;
     box-sizing: border-box;
+    background-color: gray;
 }
 .launchpad-grid-row {
     display: table-row;
@@ -14,9 +15,8 @@
     width: 64px;
     height: 64px;
     border: 1px solid black;
-    background-color: gray;
 }
-.launchpad-grid-cell-sound:before  {
+/* .launchpad-grid-cell-sound:before  {
     border: 1px dotted yellow;
     content: '';
     width: 64px;
@@ -24,9 +24,22 @@
     display: block;
     position: absolute;
     margin: -1px;
-}
+} */
 .launchpad-grid-cell-highlight {
     background-color: yellow;
+}
+
+.launchpad-grid-cell-pulse {
+    animation-name: pulse;
+    animation-iteration-count: infinite;
+    animation-timing-function: linear;
+    animation-duration: 2s;
+}
+.launchpad-grid-cell-flash {
+    animation-name: flash;
+    animation-iteration-count: infinite;
+    animation-timing-function: steps(2, jump-none);
+    animation-duration: 1s;
 }
 
 .launchpad-grid-selector  {
@@ -35,4 +48,15 @@
     position: absolute;
     pointer-events: none;
     margin: 0;
+}
+
+@keyframes pulse {
+    from { opacity: 1;}
+    50% { opacity: 0.5; }
+    to { opacity: 1; }
+}
+
+@keyframes flash {
+    from { opacity: 1;}
+    to { opacity: 0; }
 }

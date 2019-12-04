@@ -1,0 +1,14 @@
+
+.file-drop-area {
+  flex: 1;
+  margin: 0 0.25em;
+  text-align: right;
+  cursor: pointer;
+}
+.file-drop-area * {
+  pointer-events: none;
+}
+.file-drop-area-targeted {
+  background: yellow;
+  opacity: 0.3;
+}

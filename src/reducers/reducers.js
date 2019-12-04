@@ -16,7 +16,7 @@ export const cells = createReducer(Array(81).fill({}), {
     [changeCellSettings]: (state, action) => {
         return state.map((cell) => {
             if (cell.isSelected) {
-                return {...cell, ...action.payload.settings}
+                return {...cell, pluginActionOptions: {...cell.pluginActionOptions, ...action.payload.settings}}
             }
             return cell;
         });

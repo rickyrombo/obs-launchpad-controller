@@ -1,33 +1,38 @@
 import React from 'react'
 import { findAction } from '../helpers/plugin-helpers'
 import './cell-editor.css'
-
-function ActionOption({option, value}) {
-    if (option.type == 'file') {
-        return <label className="input-group"><span>{option.label}:</span><input type="file" /></label>
+import FileDropTarget from './file-drop-target'
+import LightInput from './light-input'
+/**
+ * 
+ * @typedef {{name: string, option: Object, value: Object, onCellSettingsChanged: Function}} ActionOptionProps 
+ */
+/**
+ * 
+ * @param {ActionOptionProps} props 
+ */
+function ActionOption(props) {
+    function onChange(e) {
+        onCellSettingsChanged({[props.name]: e.target.value})
     }
-    if (option.type == 'select') {
+    if (props.option.type == 'file') {
+        return <FileDropTarget {...props}/>
+    }
+    if (props.option.type == 'select') {
         return (
-        <label className="input-group"><span>{option.label}:</span>
-            <select>
-                {option.options.map((o, i) => <option key={i}>{o.label}</option>)}
+        <label className="input-group"><span>{props.option.label}:</span>
+            <select value={props.value ? props.value : 0} onChange={onChange}>
+                {props.option.options.map((o, i) => <option key={i}>{o.label}</option>)}
             </select>
         </label>)
     }
-    if (option.type == 'color') {
-        return <div className="input-group">
-            <label className="label"><span>{option.label}</span><input type="number" /></label>
-            <div>
-                <label><input type="checkbox" /> Flash</label>
-                <label><input type="checkbox" /> Pulse</label>
-            </div>
-        </div>
+    if (props.option.type == 'light') {
+        return <LightInput {...props} />
     }
-    return <span>Option type {option.type} not supported.</span>
+    return <span>Option type {props.option.type} not supported.</span>
 }
 
 export default function CellEditor({cells, onCellSettingsChanged}) {
-    console.log(cells)
     if (!cells || cells.length != 1) {
         return <div className="cell-editor"></div>
     }
@@ -42,9 +47,14 @@ export default function CellEditor({cells, onCellSettingsChanged}) {
     return (
     <div className="cell-editor">
         <h3>{cell.pluginAction.plugin} : {action.name}</h3>
+        <div className="cell-editor-options">
         {Object.keys(action.options).map(key => 
-            <ActionOption key={key} option={action.options[key]} value={cell.pluginActionOptions[key]} />
+            <ActionOption key={key} name={key} 
+                    option={action.options[key]} 
+                    value={cell.pluginActionOptions[key]}
+                    onCellSettingsChanged={onCellSettingsChanged} />
         )}
+        </div>
     </div>
     )
 }

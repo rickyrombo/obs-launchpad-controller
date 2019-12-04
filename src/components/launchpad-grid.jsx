@@ -17,13 +17,20 @@ function getColorPreviewStyles(colorCode) {
     }
 }
 
-export const LaunchpadGridCell = ({sound, color, x, y, onMouseDragStart, onMouseDragOver, onActionDropped}) => {
+export const LaunchpadGridCell = ({pluginActionOptions, x, y, onMouseDragStart, onMouseDragOver, onActionDropped}) => {
     const [highlight, setHighlight] = useState(false);
-    const spritePosition = color ? getColorPreviewStyles(color - 1) : {};
+    const [isActive, setActive] = useState(false);
+    let spritePosition = {};
+    let light = false;
+    if (pluginActionOptions) {
+        light = isActive ? pluginActionOptions.on : pluginActionOptions.off;
+        spritePosition = light ? getColorPreviewStyles(light.color - 1) : {};
+    }
     let classNames = [
         "launchpad-grid-cell",
-        (sound) ? "launchpad-grid-cell-sound" : "",
-        (highlight) ? "launchpad-grid-cell-highlight" : ""
+        (highlight) ? "launchpad-grid-cell-highlight" : "",
+        (light && light.animation == 'Flash') ? "launchpad-grid-cell-flash" : "",
+        (light && light.animation == 'Pulse') ? "launchpad-grid-cell-pulse" : ""
     ];
     function onDrop(e) {
         if (!!e.dataTransfer) {
@@ -41,6 +48,7 @@ export const LaunchpadGridCell = ({sound, color, x, y, onMouseDragStart, onMouse
                 onDragLeave={() => setHighlight(false)}
                 onDragOver={(e) => e.preventDefault()}
                 onDrop={(e) => onDrop(e)}
+                onClick={() => setActive(!isActive)}
                 className={classNames.join(" ")} 
                 style={{...spritePosition}}>
             </div>
@@ -156,7 +164,6 @@ const LaunchpadGrid = ({cells, selectedRegion, setSelectedRegion, setButtonActio
         {Array(height).fill().map((_, y) => 
             <div key={y} className="launchpad-grid-row">
                 {Array(width).fill().map((_, x) =>
-                    /* subtract 1 from y because top row is y=-1 */
                     <LaunchpadGridCell {...mouseListeners} key={positionToIndex({x, y})}
                         {...cells[positionToIndex({x, y})] }
                         onActionDropped={handleActionDrop}
