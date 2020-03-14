@@ -1,3 +1,36 @@
 .plugin-list {
   flex: 1;
+  margin: 0;
+  padding: 0;
+  list-style: none;
+  background-color: #444;
+  border: 1px solid black;
+  border-left: 0;
+}
+
+.plugin-list-item-name {
+  display: block;
+  padding: 0.75em;
+  font-size: 1.3em;
+  background-color: #BBB;
+}
+
+.plugin-list-item-settings {
+  float: right;
+}
+
+.action-list {
+  margin: 0;
+  padding: 0;
+  list-style: none;
+}
+
+.action-list-item {
+  padding: 1em 1em 1em 2em;
+  cursor: pointer;
+  background-color: #EEE;
+}
+
+.action-list-item:hover {
+  background-color: #DDD;
 }

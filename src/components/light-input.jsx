@@ -1,11 +1,11 @@
 import React from 'react'
 
-export default function LightInput({option, name, value, onCellSettingsChanged}) {  
+export default function LightInput({option, name, value, onChange}) {  
   function onColorNumberChanged(e) {
-    onCellSettingsChanged({[name]: {...value, color: e.target.value }})
+    onChange({[name]: {...value, color: e.target.value }})
   }
   function onLightAnimationChanged(e) {
-      onCellSettingsChanged({[name]: {...value, animation: e.target.value }})
+    onChange({[name]: {...value, animation: e.target.value }})
   }
   return (
     <div className="input-group">

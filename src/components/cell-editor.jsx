@@ -1,36 +1,7 @@
 import React from 'react'
 import { findAction } from '../helpers/plugin-helpers'
 import './cell-editor.css'
-import FileDropTarget from './file-drop-target'
-import LightInput from './light-input'
-/**
- * 
- * @typedef {{name: string, option: Object, value: Object, onCellSettingsChanged: Function}} ActionOptionProps 
- */
-/**
- * 
- * @param {ActionOptionProps} props 
- */
-function ActionOption(props) {
-    function onChange(e) {
-        onCellSettingsChanged({[props.name]: e.target.value})
-    }
-    if (props.option.type == 'file') {
-        return <FileDropTarget {...props}/>
-    }
-    if (props.option.type == 'select') {
-        return (
-        <label className="input-group"><span>{props.option.label}:</span>
-            <select value={props.value ? props.value : 0} onChange={onChange}>
-                {props.option.options.map((o, i) => <option key={i}>{o.label}</option>)}
-            </select>
-        </label>)
-    }
-    if (props.option.type == 'light') {
-        return <LightInput {...props} />
-    }
-    return <span>Option type {props.option.type} not supported.</span>
-}
+import InputOption from './input-option'
 
 export default function CellEditor({cells, onCellSettingsChanged}) {
     if (!cells || cells.length != 1) {
@@ -49,10 +20,10 @@ export default function CellEditor({cells, onCellSettingsChanged}) {
         <h3>{cell.pluginAction.plugin} : {action.name}</h3>
         <div className="cell-editor-options">
         {Object.keys(action.options).map(key => 
-            <ActionOption key={key} name={key} 
+            <InputOption key={key} name={key} 
                     option={action.options[key]} 
                     value={cell.pluginActionOptions[key]}
-                    onCellSettingsChanged={onCellSettingsChanged} />
+                    onChange={onCellSettingsChanged} />
         )}
         </div>
     </div>

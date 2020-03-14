@@ -1,4 +1,7 @@
 import React from 'react';
+import { FontAwesomeIcon } from '@fortawesome/react-fontawesome';
+import { faCog } from '@fortawesome/free-solid-svg-icons'
+import './plugin-list.css'
 
 export function ActionListItem({plugin, action}) {
   const dragEventHandlers = {
@@ -16,7 +19,13 @@ export function ActionListItem({plugin, action}) {
 export function PluginListItem({plugin}) {
   return (
     <li className="plugin-list-item">
-      <h3>{plugin.name}</h3>
+      <span className="plugin-list-item-name">{plugin.name} 
+          {plugin.options
+            ? <a className="plugin-list-item-settings" href="#" onClick={(e) => e.preventDefault()}>
+                <FontAwesomeIcon icon={faCog} />
+              </a> 
+            : ''}
+      </span>
       <ul className="action-list">
       {plugin.actions.map((action, i) => 
         <ActionListItem key={i} action={action} plugin={plugin} />

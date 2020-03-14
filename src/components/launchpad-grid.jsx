@@ -64,11 +64,12 @@ export const LaunchpadGridSelector = ({a, b, gridSize}) => {
             x: Math.max(a.x, b.x),
             y: Math.max(a.y, b.y)
         }
+        const borderSize = 3;
         const styles = {
             left:  o.x * gridSize + "px",
             top:  o.y * gridSize + "px",
-            width: (d.x - o.x + 1) * gridSize - 2 + "px",
-            height: (d.y - o.y + 1) * gridSize - 2 + "px"
+            width: (d.x - o.x + 1) * gridSize - borderSize * 2 + 1 + "px",
+            height: (d.y - o.y + 1) * gridSize - borderSize * 2 + 1 + "px"
         }
         return <div style={styles} className="launchpad-grid-selector"></div>
     }

@@ -7,6 +7,9 @@
     box-sizing: border-box;
     background-color: gray;
 }
+.launchpad-grid:focus {
+    outline: none;
+}
 .launchpad-grid-row {
     display: table-row;
 }
@@ -43,7 +46,7 @@
 }
 
 .launchpad-grid-selector  {
-    border: 2px dashed red;
+    border: 3px solid red;
     display: block;
     position: absolute;
     pointer-events: none;
