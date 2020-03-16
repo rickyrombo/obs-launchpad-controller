@@ -13,10 +13,9 @@ class LaunchpadOBSController extends EventEmitter {
         this.scenes = [];
         this.currentScene = 0;
         this.specialSources = [];
-        this.setupLaunchpadListeners();
-        this.setupOBSListeners();
         this.config = config;
         this.samples = [];
+        this.currentSceneSources = [];
     }
     
     isLayoutButton(x, y) { return x >=4 && y == -1; }
@@ -28,6 +27,9 @@ class LaunchpadOBSController extends EventEmitter {
     }
 
     async init() {
+        this.setupLaunchpadListeners();
+        this.setupOBSListeners();
+
         // Get scene info
         const response = await this.obs.send('GetSceneList');
         this.scenes = response.scenes;
@@ -47,7 +49,7 @@ class LaunchpadOBSController extends EventEmitter {
     }
 
     setupLaunchpadListeners() {
-        this.lp.on(Events.BUTTON_PRESSED, (x, y) => {
+        this.lp.on(Events.BUTTON_PRESSED, ({x, y}) => {
             if (this.isLayoutButton(x, y)) {
                 const layout = x - 4;
                 this.lp.setLayout(layout);
@@ -55,7 +57,11 @@ class LaunchpadOBSController extends EventEmitter {
                 if (this.isSceneButton(x, y)) {
                     this.changeScene(y);
                 } else {
-                    this.playSampleAt(x, y);
+                    console.log(this.currentSceneSources, x + y * 8)
+                    this.obs.send('SetSceneItemProperties', { 
+                        item: this.currentSceneSources[x + Math.floor(y / 2) * 8].name,
+                        visible: (y % 2 == 0)
+                    });
                 }
             } else if (this.lp.layout == Layout.ABLETON_LIVE) {
                 if (x == 8 && y == 0) {
@@ -76,17 +82,17 @@ class LaunchpadOBSController extends EventEmitter {
                 }
             } else if (this.lp.layout == Layout.USER_1) {
                 if (x == 0 && y == 0) {
-                    this.obs.send('GetSceneItemProperties', {item: 'pulp fiction'}).then(p => {
+                    this.obs.send('GetSceneItemProperties', {item: 'Pulp Fiction'}).then(p => {
                         if (!p.visible) {
                             this.lp.pulseButtonColor(0, 0 , 3);
                         } else {
                             this.lp.setButtonColor(0, 0, 3);
                         }
-                        this.obs.send('SetSceneItemProperties', {item: 'pulp fiction', visible: !p.visible})
+                        this.obs.send('SetSceneItemProperties', {item: 'Pulp Fiction', visible: !p.visible});
                     })
                     // this.obs.send('ResetSceneItem', {item: 'pulp fiction'})
                 } else if (x==1 && y ==0) {
-                    this.obs.send('SetSceneItemProperties', {item: 'Webcam', scale: {x: 2, y: 2}})
+                    this.obs.send('SetSceneItemProperties', {item: 'Webcam Front', scale: {x: 2, y: 2}})
                 }
             }
         });
@@ -108,12 +114,12 @@ class LaunchpadOBSController extends EventEmitter {
 
     setupOBSListeners() {
         this.obs.on('SourceMuteStateChanged', ({sourceName, muted}) => {
-            if (this.updateSource(sourceName, { muted }) && this.lp.layout == Layout.ABLETON_LIVE) {
+            if (this.updateStoredSource(sourceName, { muted }) && this.lp.layout == Layout.ABLETON_LIVE) {
                 this.lp.setButtonColor(this.getAudioSourceIndex(sourceName), 5, muted ? 5: 64)
             }
         });
         this.obs.on('SourceVolumeChanged', ({sourceName, volume}) => {
-            this.updateSource(sourceName, { volume });
+            this.updateStoredSource(sourceName, { volume });
         });
         this.obs.on('RecordingStarted', () => {
             if (this.lp.layout == Layout.ABLETON_LIVE) {
@@ -132,10 +138,14 @@ class LaunchpadOBSController extends EventEmitter {
         });
         this.obs.on('SourceCreated', console.log);
         this.obs.on('SourceDestroyed', console.log);
-        this.obs.on('SceneItemVisibilityChanged', console.log);
+        this.obs.on('SceneItemAdded', console.log);
+        this.obs.on('SceneItemRemoved', console.log);
+        this.obs.on('SceneItemVisibilityChanged', (sceneItem) => {
+            this.updateSceneItemVisibilityButton(sceneItem.itemName, sceneItem.itemVisible);
+        });
     }
 
-    updateSource(sourceName, update) {
+    updateStoredSource(sourceName, update) {
         let i = this.specialSources.findIndex(s => s.name == sourceName);
         if (i > -1) {
             this.specialSources[i] = {...this.specialSources[i], ...update };
@@ -143,7 +153,7 @@ class LaunchpadOBSController extends EventEmitter {
         }
         i = this.scenes[this.currentScene].sources.findIndex(s => s.name == sourceName);
         if (i > -1) {
-            this.scenes[this.currentScene].sources[i] = {...this.scenes[this.currentScene].sources[i], ...update };
+            this.scenes[this.currentScene].sources[i] = { ...this.scenes[this.currentScene].sources[i], ...update };
             return true;
         }
         console.error('Could not find sourceName', sourceName);
@@ -162,6 +172,7 @@ class LaunchpadOBSController extends EventEmitter {
         if (layout == Layout.SESSION) {
             this.setupSceneButtons();
             this.setupSampleButtons();
+            this.setupSceneItemVisibilityButtons();
         }
         if (layout == Layout.USER_1) {
             this.lp.setButtonColor(0, 0, 2);
@@ -186,6 +197,48 @@ class LaunchpadOBSController extends EventEmitter {
             this.lp.setButtonColor(8, i, 64);
         }
         this.lp.setButtonColor(8, this.currentScene, 72);
+    }
+
+    setupSceneItemVisibilityButtons() {
+        this.currentSceneSources.forEach((source, index) => {
+            const x = index % 8;
+            const y = Math.floor(index / 8) * 2;
+            this.lp.setButtonColor(x, y, 0);
+        });
+        this.currentSceneSources = [];
+        const sources = this.getAllSceneSources();
+        const addSource = (source) => {
+            this.currentSceneSources.push(source);
+            this.obs.send('GetSceneItemProperties', { item: source.name }).then(properties => {
+                this.updateSceneItemVisibilityButton(source.name, properties.visible);
+            })
+            if (source.type == "group") {
+                source.groupChildren.forEach(s => addSource(s));
+            }
+        }
+        sources.forEach((source) => {
+            if (!this.specialSources.find(s => s.name == source.name)) {
+                addSource(source);
+            }
+        });
+    }
+
+    updateSceneItemVisibilityButton(sourceName, isVisible) {
+        const index = this.currentSceneSources.findIndex(s => s.name == sourceName);
+        if (index == -1) {
+            console.error(`Could not update scene item visibility button. Source "${sourceName}" not tracked`);
+            return;
+        }
+        const source = this.currentSceneSources[index];
+        const x = index % 8;
+        const y = Math.floor(index / 8) * 2;
+        if (isVisible) {
+            this.lp.setButtonColor(x, y, this._getSourceTypeVisibilityColor(source.type));
+            this.lp.setButtonColor(x, y + 1, 0);
+        } else {
+            this.lp.setButtonColor(x, y, 0);
+            this.lp.setButtonColor(x, y + 1, this._getSourceTypeVisibilityColor(source.type));
+        }
     }
 
     setupSampleButtons() {
@@ -216,6 +269,21 @@ class LaunchpadOBSController extends EventEmitter {
         }
     }
 
+    _getSourceTypeVisibilityColor(type) {
+        switch(type) {
+            case "ffmpeg_source":
+                return 64;
+            case "wasapi_input_capture":
+                return 65;
+            case "dshow_input":
+                return 66;
+            case "group":
+                return 67;
+            default:
+                return 68;
+        }
+    }
+
     getAllSceneSources() { 
         return [
             ...this.specialSources, 
@@ -227,7 +295,9 @@ class LaunchpadOBSController extends EventEmitter {
         this.lp.setButtonColor(8, this.currentScene, 64);
         this.lp.setButtonColor(8, newScene, 72);
         this.currentScene = newScene;
-        this.obs.send('SetCurrentScene', { "scene-name": this.scenes[this.currentScene].name })
+        this.obs.send('SetCurrentScene', { "scene-name": this.scenes[this.currentScene].name }).then(() => {
+            this.setupSceneItemVisibilityButtons();
+        })
     }
 
     playSampleAt(x, y) {

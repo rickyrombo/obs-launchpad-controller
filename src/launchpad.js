@@ -152,16 +152,24 @@ class Launchpad extends EventEmitter {
         }
     }
 
+    _isInALayoutThatHasFaders() {
+        return (this.layout == Layout.VOLUME_FADERS || this.layout == Layout.PAN_FADERS);
+    }
+
+    _isNoteAFader(note) {
+        return note >= FADER_NOTE_START && note <= FADER_NOTE_END;
+    }
+
     _onMidiMessage(event) {
         const [layout, note, velocity] = event.data;
         let {x, y} = this.getButtonXY(note, layout);
-        if (note >= FADER_NOTE_START && note <= FADER_NOTE_END && (this.layout == Layout.VOLUME_FADERS || this.layout == Layout.PAN_FADERS)) {
+        if (this._isNoteAFader(note) && this._isInALayoutThatHasFaders()) {
             this.emit(Events.FADER_CHANGED, note - 21, velocity);
         } else {
             if (velocity == 127) {
-                this.emit(Events.BUTTON_PRESSED, x, y, note, layout)
+                this.emit(Events.BUTTON_PRESSED, {x, y, note, layout})
             } else {
-                this.emit(Events.BUTTON_RELEASED, x, y, note, layout)
+                this.emit(Events.BUTTON_RELEASED, {x, y, note, layout})
             }
         }
         this.log("Note Event:", event.data, {x, y})
