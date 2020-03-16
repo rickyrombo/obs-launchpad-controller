@@ -52,10 +52,13 @@ function App() {
     const form = (
         <form action="/config.html" method="post" onSubmit={(e) => e.preventDefault()}>
             <input name="username" type="hidden" />
-            <input name="password" autoComplete="current-password" 
+            <input 
+                name="password" 
+                autoComplete="current-password" 
                 disabled={connected ? 'disabled' : ''} 
                 type="password" value={password} 
-                onChange={(e) => setPassword(e.target.value)}/>
+                onChange={(e) => setPassword(e.target.value)}
+            />
             <input onClick={connect} type="submit" value="Connect"/>
         </form>)
     return (
