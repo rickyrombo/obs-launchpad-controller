@@ -34,8 +34,8 @@ function App() {
         controller.lp.setAllColor(0);
     })
     controller.on('LaunchpadStateChanged', ({state}) =>
-        setLaunchpadStatus(`Launchpad ${state}`
-    ));
+        setLaunchpadStatus(`Launchpad ${state}`)
+    );
     async function connect() {
         try {
             setError('')
