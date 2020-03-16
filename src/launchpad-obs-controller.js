@@ -57,8 +57,7 @@ class LaunchpadOBSController extends EventEmitter {
                 if (this.isSceneButton(x, y)) {
                     this.changeScene(y);
                 } else {
-                    console.log(this.currentSceneSources, x + y * 8)
-                    this.obs.send('SetSceneItemProperties', { 
+                    this.obs.send('SetSceneItemProperties', {
                         item: this.currentSceneSources[x + Math.floor(y / 2) * 8].name,
                         visible: (y % 2 == 0)
                     });
@@ -81,19 +80,7 @@ class LaunchpadOBSController extends EventEmitter {
                     this.lp.setLayout(Layout.ABLETON_LIVE);
                 }
             } else if (this.lp.layout == Layout.USER_1) {
-                if (x == 0 && y == 0) {
-                    this.obs.send('GetSceneItemProperties', {item: 'Pulp Fiction'}).then(p => {
-                        if (!p.visible) {
-                            this.lp.pulseButtonColor(0, 0 , 3);
-                        } else {
-                            this.lp.setButtonColor(0, 0, 3);
-                        }
-                        this.obs.send('SetSceneItemProperties', {item: 'Pulp Fiction', visible: !p.visible});
-                    })
-                    // this.obs.send('ResetSceneItem', {item: 'pulp fiction'})
-                } else if (x==1 && y ==0) {
-                    this.obs.send('SetSceneItemProperties', {item: 'Webcam Front', scale: {x: 2, y: 2}})
-                }
+                // Samples?
             }
         });
 
@@ -175,7 +162,7 @@ class LaunchpadOBSController extends EventEmitter {
             this.setupSceneItemVisibilityButtons();
         }
         if (layout == Layout.USER_1) {
-            this.lp.setButtonColor(0, 0, 2);
+            // Setup samples?
         }
         if (layout == Layout.ABLETON_LIVE) {
             this.lp.setButtonColor(8, 0, 2);
@@ -332,127 +319,3 @@ class LaunchpadOBSController extends EventEmitter {
 }
 
 export default LaunchpadOBSController
-
-
-// const body = document.getElementsByTagName('body')[0];
-// const table = document.createElement('div');
-// table.style.display = 'table';
-// //table.style.backgroundImage = "url(\"" + colors + "\")";
-// for (let i = 0; i < 8; i++) {
-//     const row = document.createElement('div');
-//     row.style.display = 'table-row';
-//     for (let j = 0; j < 8; j++) {
-//         const cell = document.createElement('div');
-//         cell.style.display = "table-cell";
-//         cell.style.width = "121px";
-//         cell.style.height = "121px";
-//         cell.style.border = "1px solid black";
-//         cell.style.boxSizing = "border-box";
-//         // const {x, y} = getSpriteXY(j + 8 * i);
-//         // cell.style.backgroundPositionX = x * 120 + "px";
-//         // cell.style.backgroundPositionY = y * 121 + "px";
-//         // cell.style.backgroundImage = "url(\"" + colors + "\")";
-//         cell.style.verticalAlign = "middle";
-//         cell.style.padding = "10px";
-//         cell.dataset.x = j;
-//         cell.dataset.y = i;
-//         cell.ondrop = function(event) {
-//             this.style.backgroundColor = "#000";
-//             this.style.color = "#FFF";
-//             const file = event.dataTransfer.items[0].getAsFile();
-//             this.append(file.name)
-//             this.dataset.file = URL.createObjectURL(file);
-//             event.preventDefault();
-//         }
-//         cell.ondragover = function(event) {
-//             this.style.backgroundColor = "#FF0";
-//             event.preventDefault();
-//         }
-//         cell.onclick = function(event) {
-//             const audio = new Audio(this.dataset.file);
-//             audio.play();
-//         }
-//         const number = document.createElement('input');
-//         number.type = "number";
-//         number.style.width = "3em"
-//         number.max = 127;
-//         number.min = 1;
-//         number.value = 1;
-//         number.onchange = function(event) {
-//             const {x, y} = getSpriteXY(this.value - 1);
-//             cell.style.backgroundPositionX = x * 120 + "px";
-//             cell.style.backgroundPositionY = y * 122 + "px";
-//             cell.style.backgroundImage = "url(\"" + colors + "\")";
-//         }
-//         // number.style.display = "inline";
-//         cell.appendChild(number);
-//         row.appendChild(cell);
-//     }
-//     table.appendChild(row);
-// }
-// body.appendChild(table);
-
-// (async function() {
-//     let specialSources = []
-//     let faders = []
-//     let currentScene;
-//     let scenes = []
-//     const obs = new OBSWebSocket();
-//     const lp = new Launchpad({debug: true});
-//     await obs.connect();
-//     console.log('Connected to OBS');
-//     await lp.connect();
-//     console.log('Connected to Launchpad MK2');
-    
-//     lp.on(Events.BUTTON_PRESSED, async(x, y) => {
-//         console.log('woo')
-//         if (x == 8 && y < scenes.length && lp.layout == Layout.SESSION) {
-//             lp.setButtonColor(x, currentScene, 64);
-//             lp.setButtonColor(x, y, 72);
-//             currentScene = y;
-//             console.log(currentScene, scenes[currentScene])
-//             obs.send('SetCurrentScene', { "scene-name": scenes[currentScene].name })
-//         }
-//         const isMixerButton = (x, y) => x == 7 && y == -1
-//         const isSessionButton = (x, y) => x == 4 && y == -1
-//         if (isMixerButton(x, y)) {
-//             lp.setLayout(Layout.VOLUME_FADERS)
-//             for (let i = 0; i < specialSources.length; i++) {
-//                 lp.setupFader(i, FaderType.VOLUME, 15, specialSources[i].volume * 127)
-//                 faders.push(specialSources[i]);
-//             }
-//             for (let i = 0; i < scenes[currentScene].sources.length; i++) {
-//                 lp.setupFader(i + specialSources.length, FaderType.VOLUME, 10, scenes[currentScene].sources[i].volume * 127);
-//                 faders.push(scenes[currentScene].sources[i]);
-//             }
-//             lp.setButtonColor(x, y, 42);
-//             lp.setButtonColor(8, 0, 54);
-//         }
-//         else if (isSessionButton(x, y)) {
-//             lp.setLayout(Layout.SESSION);
-//             const sceneList = await obs.send('GetSceneList');
-//             scenes = sceneList.scenes;
-//             for (let i = 0; i < scenes.length; i++) {
-//                 lp.setButtonColor(8, i, 64);
-//             }
-//             const { name } = await obs.send('GetCurrentScene');
-//             currentScene = scenes.findIndex(el => el.name == name);
-//             lp.setButtonColor(8, currentScene, 72);
-//             lp.setButtonColor(x, y, 43);
-//         }
-//     });
-//     lp.on(Events.FADER_CHANGED, (fader, value) => {
-//         console.log(faders[fader].name, fader, value)
-//         obs.send('SetVolume', { source: faders[fader].name, volume: value / 127.0 })
-//     });
-//     const specialSourcesNames = await obs.send('GetSpecialSources')
-//     console.log(specialSourcesNames);
-//     for (let key of Object.keys(specialSourcesNames)) {
-//         if (key.startsWith("desktop") || key.startsWith("mic")) {
-//             let source = await obs.send('GetSourceSettings', { sourceName: specialSourcesNames[key] });
-//             const volumeInfo = await obs.send('GetVolume', { source: specialSourcesNames[key] });
-//             specialSources.push({...source, ...volumeInfo})
-//             console.log(source)
-//         }
-//     }
-// })()
