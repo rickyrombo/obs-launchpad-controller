@@ -1,7 +1,6 @@
 const path = require('path');
 const fs = require('fs');
 const HtmlWebpackPlugin = require('html-webpack-plugin');
-const CopyWebpackPlugin = require('copy-webpack-plugin');
 if (!fs.existsSync('./ssl-gen/https-config.gen.js')) {
   console.error("https-config.gen.js missing. Please see readme on how to generate the certs needed for SSL")
 }
@@ -50,9 +49,6 @@ module.exports = {
       filename: 'index.html',
       chunks: ['index']
     }),
-    new CopyWebpackPlugin([
-      { from: 'static' }
-    ])
   ],
   node: {
     fs: 'empty',

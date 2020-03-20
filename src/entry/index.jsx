@@ -4,29 +4,18 @@ import ReactDOM from 'react-dom'
 import { store, persistor } from '../helpers/store'
 import { Provider } from 'react-redux'
 import { PersistGate } from 'redux-persist/es/integration/react'
-import Nanoleaf from '../nanoleaf'
 
-// If we're loaded as standalone, resize the window to make it look clean
-if (window.matchMedia('(display-mode: standalone)').matches) {
-    window.resizeTo(320, 200);
-}
-if ('serviceWorker' in navigator) {
-    window.addEventListener('load', function() {
-      navigator.serviceWorker.register('/service-worker.js').then(function(registration) {
-            // Registration was successful
-            console.log('ServiceWorker registration successful with scope: ', registration.scope);
-        }, function(err) {
-            // registration failed :(
-            console.log('ServiceWorker registration failed: ', err);
-        });
-    });
-}
+let storedPassword = localStorage.getItem('obs-password');
+storedPassword = storedPassword ? storedPassword : '';
+
 function App() {
     const [deferredPrompt, setDeferredPrompt] = useState();
-    const [password, setPassword] = useState('');
+    const [password, setPassword] = useState(storedPassword);
     const [connected, setConnected] = useState(false);
     const [error, setError] = useState(false);
-    const [launchpadStatus, setLaunchpadStatus] = useState(false)
+    const [launchpadStatus, setLaunchpadStatus] = useState(false);
+    const [rememberPassword, setRememberPassword] = useState(true);
+
     const controller = new LaunchpadOBSController(store.getState());
     window.addEventListener('beforeinstallprompt', (e) => {
         setDeferredPrompt(e);
@@ -37,7 +26,13 @@ function App() {
     controller.on('LaunchpadStateChanged', ({state}) =>
         setLaunchpadStatus(`Launchpad ${state}`)
     );
-    async function connect() {
+    async function connect(e) {
+        e && e.preventDefault();
+        if (rememberPassword) {
+            localStorage.setItem('obs-password', password);
+        } else {
+            localStorage.removeItem('obs-password');
+        }
         try {
             setError('')
             await controller.connect({password});
@@ -50,9 +45,12 @@ function App() {
             setError(err.message || err.error);
         }
     }
-
+    if (storedPassword) {
+        storedPassword = null;
+        connect();
+    }
     const form = (
-        <form action="/config.html" method="post" onSubmit={(e) => e.preventDefault()}>
+        <form onSubmit={connect}>
             <input name="username" type="hidden" />
             <input 
                 name="password" 
@@ -61,7 +59,14 @@ function App() {
                 type="password" value={password} 
                 onChange={(e) => setPassword(e.target.value)}
             />
-            <input onClick={connect} type="submit" value="Connect"/>
+            <input type="submit" value="Connect"/>
+            <label style={{display: "block"}}>
+                <input 
+                    type="checkbox" 
+                    checked={rememberPassword} 
+                    onChange={(e) => setRememberPassword(e.value)} 
+                /> Remember Password
+            </label>
         </form>)
     return (
         <div>
@@ -76,7 +81,7 @@ function App() {
         </div>
     );
 }
-//D17az7XqRc1dXAh9Ykmi
+
 ReactDOM.render(
 <Provider store={store}>
     <PersistGate persistor={persistor}>

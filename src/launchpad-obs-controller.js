@@ -4,6 +4,48 @@ import { positionToIndex, indexToPosition, getFileFromSandbox } from './helpers'
 import { EventEmitter } from 'events';
 import Nanoleaf from './nanoleaf';
 
+
+
+function toRGB(hue, saturation, brightness) {
+    /* accepts parameters
+    * h  Object = {h:x, s:y, v:z}
+    * OR 
+    * h, s, v
+    */
+    function HSVtoRGB(h, s, v) {
+        var r, g, b, i, f, p, q, t;
+        if (arguments.length === 1) {
+            s = h.s, v = h.v, h = h.h;
+        }
+        i = Math.floor(h * 6);
+        f = h * 6 - i;
+        p = v * (1 - s);
+        q = v * (1 - f * s);
+        t = v * (1 - (1 - f) * s);
+        switch (i % 6) {
+            case 0: r = v, g = t, b = p; break;
+            case 1: r = q, g = v, b = p; break;
+            case 2: r = p, g = v, b = t; break;
+            case 3: r = p, g = q, b = v; break;
+            case 4: r = t, g = p, b = v; break;
+            case 5: r = v, g = p, b = q; break;
+        }
+        return {
+            r: Math.round(r * 255),
+            g: Math.round(g * 255),
+            b: Math.round(b * 255)
+        };
+    }
+    const {r, g, b} = HSVtoRGB(
+        {
+            h: hue / 360.0,
+            s: saturation / 100.0,
+            v: brightness / 100.0,
+        }
+    )
+    return [r, g, b];
+}
+
 const isAudioSource = (source) => source.type ? source.type.search(/input|wasapi/g) > -1 : source.sourceType.search(/input|wasapi/g) > -1;
 
 class LaunchpadOBSController extends EventEmitter {
@@ -18,6 +60,7 @@ class LaunchpadOBSController extends EventEmitter {
         this.config = config;
         this.samples = [];
         this.currentSceneSources = [];
+        this.nanoleafEffects = [];
         this.favoriteEffects = [{
             name: "Fireworks",
             color: 62,
@@ -100,9 +143,12 @@ class LaunchpadOBSController extends EventEmitter {
     }
 
     setupLaunchpadListeners() {
+        let interval;
         this.lp.on(Events.BUTTON_PRESSED, ({x, y, }) => {
+            clearInterval(interval);
             if (this.isLayoutButton(x, y)) {
                 const layout = x - 4;
+                this.lp.setAllColor(0);
                 this.lp.setLayout(layout);
             } else if (this.lp.layout == Layout.SESSION) {
                 if (this.isSceneButton(x, y)) {
@@ -133,9 +179,23 @@ class LaunchpadOBSController extends EventEmitter {
                     this.lp.setLayout(Layout.ABLETON_LIVE);
                 }
             } else if (this.lp.layout == Layout.USER_1) {
-                // Samples?
+                const effect = this.nanoleafEffects.filter(e => e.pluginType == 'rhythm')[x + y * 8];
+                const color = effect.palette.find(c => c.brightness > 0);
+                const { hue, saturation, brightness } = color;
+                const rgb = toRGB(hue, saturation, brightness);
+                interval = setInterval(() => {
+                    this.lp.setButtonColor(x, y, 0);
+                    setTimeout(() => {
+                        this.lp.setButtonColorRGB(x, y, rgb);
+                    }, 200);
+                }, 400);
+                this.nanoleaf.setSelectedEffect(effect.animName);
+                console.log(effect.animName);
             }
         });
+
+        this.lp.on(Events.BUTTON_RELEASED, () => {
+        })
 
         this.lp.on(Events.LAYOUT_CHANGED, (layout) => {
             this.setupLayout(layout);
@@ -216,7 +276,26 @@ class LaunchpadOBSController extends EventEmitter {
             this.setupNanoleafEffectButtons();
         }
         if (layout == Layout.USER_1) {
-            // Setup samples?
+            if (this.nanoleafEffects.length == 0) {
+                this.nanoleafEffects = await this.nanoleaf.getAllEffects();
+            }
+            
+            this.nanoleafEffects.filter(e => e.pluginType === 'rhythm').forEach(async(effect, i) => {
+                const color = effect.palette.find(c => c.brightness > 0);
+                const { hue, saturation, brightness } = color;
+                const rgb = toRGB(hue, saturation, brightness);
+                this.lp.setButtonColorRGB(i % 8, Math.floor(i/8), rgb);
+            })
+            // let i = 0;
+            // setInterval(() => {
+            //     console.log('updating colors', i)
+            //     i = (i + 1) % this.nanoleafEffects.length;
+            //     this.nanoleafEffects.forEach(async(effect, i) => {
+            //         const { hue, saturation, brightness } = effect.palette[Math.floor(Math.random() * effect.palette.length)];
+            //         const rgb = hslToRgb(hue, saturation/100.0, brightness/100.0);
+            //         this.lp.setButtonColorRGB(i % 8, Math.floor(i/8), rgb);
+            //     })
+            // }, 10000);
         }
         if (layout == Layout.ABLETON_LIVE) {
             this.lp.setButtonColor(8, 0, 2);

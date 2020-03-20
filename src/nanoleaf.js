@@ -1,14 +1,34 @@
+const { ipcRenderer } = window.require('electron');
+
 class Nanoleaf {
   constructor() {
-    this.localProxy = "localhost";
+    this.ip = "192.168.1.129";
+    this.port = 16021;
     this.authToken = null;
   }
 
-  _getFullApiPath(path) {
+  async fetch(path, options) {
+    const response = await ipcRenderer.invoke('proxy-request', {
+      method: 'GET',
+      hostname: this.ip,
+      port: this.port,
+      path: this._getApiPath(path),
+      ...options,
+    });
+    return new Promise((resolve, reject) => {
+      if (response.status >= 200 && response.status < 300) {
+        resolve(response);
+      } else {
+        reject(response);
+      }
+    })
+  }
+
+  _getApiPath(path) {
     if (path == 'new') {
-      return `http://${this.localProxy}:16021/api/v1/${path}`
+      return `/api/v1/${path}`
     }
-    return `http://${this.localProxy}:16021/api/v1/${this.authToken}/${path}`;
+    return `/api/v1/${this.authToken}/${path}`;
   }
 
   authenticate() {
@@ -18,16 +38,11 @@ class Nanoleaf {
     }
     this.authToken = localStorage.getItem('nanoleaf-auth-token');
     if (this.authToken) {
-      console.log('Authentication loaded from local storage');
+      console.log('Authentication loaded from local storage', this.authToken);
       return;
     }
-    
-    fetch(this._getFullApiPath('new'), { method: 'POST', mode: 'cors' }).then((res) => {
-      console.log('Response:', res.status, res.statusText);
-      return res.json();
-    }).then(json => {
-      console.log(json);
-      this.authToken = json.auth_token;
+    this.fetch('new', { method: 'POST' }).then((res) => {
+      this.authToken = res.body.auth_token;
       localStorage.setItem('nanoleaf-auth-token', this.authToken);
     });
   }
@@ -46,16 +61,25 @@ class Nanoleaf {
     return fetch(this._getFullApiPath('state'), { method: 'PUT', body: JSON.stringify(state) });
   }
 
-  getEffectsList() {
-    return fetch(this._getFullApiPath('effects/effectsList')).then(res => {
-      return res.json();
-    });
+  async getEffectsList() {
+    const res = await this.fetch('effects/effectsList');
+    return res.body;
+  }
+
+  async getEffect(name) {
+    const res = await this.fetch('effects', { method: 'PUT', body: { write: { command: 'request', animName: name } } });
+    return res.body;
+  }
+
+  async getAllEffects() {
+    const res = await this.fetch('effects', { method: 'PUT', body: { write: { command: 'requestAll' } } });
+    return res.body.animations;
   }
 
   async setSelectedEffect(effectName) {
-    return await fetch(this._getFullApiPath('effects/select'), {
+    return await this.fetch('effects/select', {
       method: 'PUT',
-      body: JSON.stringify({select: effectName})
+      body: { select: effectName }
     });
   }
 }
