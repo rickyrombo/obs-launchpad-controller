@@ -2,6 +2,7 @@ import Launchpad, { Events, Layout, FaderType} from './launchpad';
 import OBSWebSocket from 'exports-loader?OBSWebSocket!obs-websocket-js/dist/obs-websocket.js'
 import { positionToIndex, indexToPosition, getFileFromSandbox } from './helpers'
 import { EventEmitter } from 'events';
+import Nanoleaf from './nanoleaf';
 
 const isAudioSource = (source) => source.type ? source.type.search(/input|wasapi/g) > -1 : source.sourceType.search(/input|wasapi/g) > -1;
 
@@ -10,19 +11,69 @@ class LaunchpadOBSController extends EventEmitter {
         super();
         this.obs = new OBSWebSocket();
         this.lp = new Launchpad({debug: true});
+        this.nanoleaf = new Nanoleaf();
         this.scenes = [];
         this.currentScene = 0;
         this.specialSources = [];
         this.config = config;
         this.samples = [];
         this.currentSceneSources = [];
+        this.favoriteEffects = [{
+            name: "Fireworks",
+            color: 62,
+        },{
+            name: "Prydz",
+            color: 64,
+        },{
+            name: "Nightclub",
+            color: 58,
+        },{
+            name: "Nightclub 2",
+            color: 71,
+        },{
+            name: "Pulse Pop Beats",
+            color: 107,
+        }, {
+            name: "Duo RED EDM",
+            color: 60,
+        },{
+            name: "Shooting Stars",
+            color: 81,
+        },{ 
+            name: "Energize", 
+            color: 41,
+        },{
+            name: "80s Burst Synth",
+            color: 12,
+        },{
+            name: "Purple Moonbeams",
+            color: 81,
+        },{
+            name: "Thunder",
+            color: 103,
+        },{
+            name: "Quarks",
+            color: 17,
+        },{
+            name: "Sonic Sunset",
+            color: 108,
+        },{
+            name: "Electric purple",
+            color: 57,
+        },{
+            name: "Higgs Boson",
+            color: 114,
+        },{
+            name: "Rave",
+            color: 74,
+        }];
     }
     
     isLayoutButton(x, y) { return x >=4 && y == -1; }
     isSceneButton(x, y) { return x == 8 && y < this.scenes.length; }
 
     async connect(config) {
-        await Promise.all([this.obs.connect(config), this.lp.connect()]);
+        await Promise.all([this.obs.connect(config), this.nanoleaf.authenticate(), this.lp.connect()]);
         await this.init();
     }
 
@@ -49,18 +100,20 @@ class LaunchpadOBSController extends EventEmitter {
     }
 
     setupLaunchpadListeners() {
-        this.lp.on(Events.BUTTON_PRESSED, ({x, y}) => {
+        this.lp.on(Events.BUTTON_PRESSED, ({x, y, }) => {
             if (this.isLayoutButton(x, y)) {
                 const layout = x - 4;
                 this.lp.setLayout(layout);
             } else if (this.lp.layout == Layout.SESSION) {
                 if (this.isSceneButton(x, y)) {
                     this.changeScene(y);
-                } else {
+                } else if (y < 6) {
                     this.obs.send('SetSceneItemProperties', {
                         item: this.currentSceneSources[x + Math.floor(y / 2) * 8].name,
                         visible: (y % 2 == 0)
                     });
+                } else {
+                    this.nanoleaf.setSelectedEffect(this.favoriteEffects[x + (y - 6) * 8].name);
                 }
             } else if (this.lp.layout == Layout.ABLETON_LIVE) {
                 if (x == 8 && y == 0) {
@@ -160,6 +213,7 @@ class LaunchpadOBSController extends EventEmitter {
             this.setupSceneButtons();
             this.setupSampleButtons();
             this.setupSceneItemVisibilityButtons();
+            this.setupNanoleafEffectButtons();
         }
         if (layout == Layout.USER_1) {
             // Setup samples?
@@ -208,6 +262,12 @@ class LaunchpadOBSController extends EventEmitter {
                 addSource(source);
             }
         });
+    }
+
+    setupNanoleafEffectButtons() {
+        this.favoriteEffects.forEach((effect, index) => {
+            this.lp.setButtonColor(index % 8, 6 + Math.floor(index / 8), effect.color);
+        })
     }
 
     updateSceneItemVisibilityButton(sourceName, isVisible) {

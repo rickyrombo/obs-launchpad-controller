@@ -4,6 +4,7 @@ import ReactDOM from 'react-dom'
 import { store, persistor } from '../helpers/store'
 import { Provider } from 'react-redux'
 import { PersistGate } from 'redux-persist/es/integration/react'
+import Nanoleaf from '../nanoleaf'
 
 // If we're loaded as standalone, resize the window to make it look clean
 if (window.matchMedia('(display-mode: standalone)').matches) {
@@ -49,6 +50,7 @@ function App() {
             setError(err.message || err.error);
         }
     }
+
     const form = (
         <form action="/config.html" method="post" onSubmit={(e) => e.preventDefault()}>
             <input name="username" type="hidden" />

@@ -6,7 +6,7 @@
   "scripts": {
     "test": "echo \"Error: no test specified\" && exit 1",
     "build": "webpack",
-    "start": "webpack-dev-server --open",
+    "start": "webpack-dev-server --open && node nanoleaf-proxy-server",
     "watch": "webpack --watch"
   },
   "author": "Marcus Pasell",
