@@ -1,16 +1,18 @@
 {
-  "name": "obs-launchpad-controller",
+  "name": "launchpad-utility",
   "version": "1.0.0",
-  "description": "A script for controlling OBS via a launchpad",
+  "description": "A script for controlling various devices via a Launchpad",
   "private": true,
   "main": "app/main.js",
   "scripts": {
     "test": "echo \"Error: no test specified\" && exit 1",
-    "build": "webpack",
-    "start": "concurrently webpack-dev-server \"electron .\"",
-    "server": "webpack-dev-server",
+    "build": "webpack --config webpack.prod.js",
+    "start": "concurrently \"yarn server\" \"yarn electron\"",
+    "server": "webpack-dev-server --config webpack.dev.js",
     "watch": "webpack --watch",
-    "electron": "electron ."
+    "electron": "electron .",
+    "dist": "electron-builder",
+    "pack": "electron-builder --dir"
   },
   "author": "Marcus Pasell",
   "license": "MIT",
@@ -27,6 +29,7 @@
     "copy-webpack-plugin": "^5.0.5",
     "css-loader": "^3.2.0",
     "electron": "^8.1.1",
+    "electron-builder": "^22.4.1",
     "exports-loader": "^0.7.0",
     "file-loader": "^4.2.0",
     "html-webpack-plugin": "^3.2.0",
@@ -40,14 +43,33 @@
     "webpack-dev-server": "^3.9.0"
   },
   "dependencies": {
+    "@achingbrain/ssdp": "^2.1.2",
     "@fortawesome/fontawesome-svg-core": "^1.2.26",
     "@fortawesome/free-solid-svg-icons": "^5.12.0",
     "@fortawesome/react-fontawesome": "^0.1.8",
+    "node-ssdp": "^4.0.0",
     "npm": "^6.14.3",
     "obs-websocket-js": "^3.1.0",
     "react-redux": "^7.1.3",
     "redux": "^4.0.4",
     "redux-persist": "^6.0.0",
-    "redux-thunk": "^2.3.0"
+    "redux-thunk": "^2.3.0",
+    "webpack-merge": "^4.2.2"
+  },
+  "build": {
+    "appId": "launchpad-utility",
+    "productName": "Launchpad Utility",
+    "win": {
+      "target": "portable",
+      "icon": "assets/icon.ico",
+      "legalTrademarks": "© 2020 Marcus Pasell All Rights Reserved"
+    },
+    "files": [
+      "build/**/*",
+      "app/**/*"
+    ],
+    "directories": {
+      "buildResources": "assets"
+    }
   }
 }

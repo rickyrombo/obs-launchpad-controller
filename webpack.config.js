@@ -32,7 +32,7 @@ module.exports = {
   devtool: 'inline-source-map',
    devServer: {
      port: 443,
-     contentBase: './dist',
+     contentBase: './build',
      index: 'index.html',
      https: HttpsSettings
    },
@@ -57,6 +57,6 @@ module.exports = {
   },
   output: {
     filename: '[name].bundle.js',
-    path: path.resolve(__dirname, 'dist'),
+    path: path.resolve(__dirname, 'build'),
   },
 };

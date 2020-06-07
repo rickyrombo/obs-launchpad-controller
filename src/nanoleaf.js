@@ -2,12 +2,16 @@ const { ipcRenderer } = window.require('electron');
 
 class Nanoleaf {
   constructor() {
-    this.ip = "192.168.1.129";
+    this.ip === null;
     this.port = 16021;
     this.authToken = null;
   }
 
   async fetch(path, options) {
+    if (!this.ip) {
+      console.log('Finding nanoleaf...')
+      this.ip = await ipcRenderer.invoke('find-nanoleaf-address', 15000);
+    }
     const response = await ipcRenderer.invoke('proxy-request', {
       method: 'GET',
       hostname: this.ip,
@@ -42,6 +46,7 @@ class Nanoleaf {
       return;
     }
     this.fetch('new', { method: 'POST' }).then((res) => {
+      console.log('Got new authentication token', res.body.auth_token)
       this.authToken = res.body.auth_token;
       localStorage.setItem('nanoleaf-auth-token', this.authToken);
     });

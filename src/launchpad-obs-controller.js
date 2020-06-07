@@ -179,18 +179,22 @@ class LaunchpadOBSController extends EventEmitter {
                     this.lp.setLayout(Layout.ABLETON_LIVE);
                 }
             } else if (this.lp.layout == Layout.USER_1) {
-                const effect = this.nanoleafEffects.filter(e => e.pluginType == 'rhythm')[x + y * 8];
-                const color = effect.palette.find(c => c.brightness > 0);
-                const { hue, saturation, brightness } = color;
-                const rgb = toRGB(hue, saturation, brightness);
-                interval = setInterval(() => {
-                    this.lp.setButtonColor(x, y, 0);
-                    setTimeout(() => {
-                        this.lp.setButtonColorRGB(x, y, rgb);
-                    }, 200);
-                }, 400);
-                this.nanoleaf.setSelectedEffect(effect.animName);
-                console.log(effect.animName);
+                if (this.isSceneButton(x, y)) {
+                    this.changeScene(y);
+                } else {
+                    const effect = this.nanoleafEffects.filter(e => e.pluginType == 'rhythm')[x + y * 8];
+                    const color = effect.palette.find(c => c.brightness > 0);
+                    const { hue, saturation, brightness } = color;
+                    const rgb = toRGB(hue, saturation, brightness);
+                    interval = setInterval(() => {
+                        this.lp.setButtonColor(x, y, 0);
+                        setTimeout(() => {
+                            this.lp.setButtonColorRGB(x, y, rgb);
+                        }, 200);
+                    }, 400);
+                    this.nanoleaf.setSelectedEffect(effect.animName);
+                    console.log(effect.animName);
+                }
             }
         });
 
@@ -276,6 +280,7 @@ class LaunchpadOBSController extends EventEmitter {
             this.setupNanoleafEffectButtons();
         }
         if (layout == Layout.USER_1) {
+            this.setupSceneButtons();
             if (this.nanoleafEffects.length == 0) {
                 this.nanoleafEffects = await this.nanoleaf.getAllEffects();
             }
