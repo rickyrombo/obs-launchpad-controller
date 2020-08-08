@@ -116,7 +116,12 @@ class LaunchpadOBSController extends EventEmitter {
     isSceneButton(x, y) { return x == 8 && y < this.scenes.length; }
 
     async connect(config) {
-        await Promise.all([this.obs.connect(config), this.nanoleaf.authenticate(), this.lp.connect()]);
+        const nanoleafAuth = this.nanoleaf.authenticate().catch(e => {
+            if (e.status == 403) {
+                console.log('You need to hold the power button and reauthenticate with your nano leaf');
+            }
+        })
+        await Promise.all([this.obs.connect(config), nanoleafAuth, this.lp.connect()]);
         await this.init();
     }
 
@@ -129,7 +134,12 @@ class LaunchpadOBSController extends EventEmitter {
         this.scenes = response.scenes;
         const { name } = await this.obs.send('GetCurrentScene');
         this.currentScene = this.scenes.findIndex(el => el.name == name);
-        
+        const studioMode = await this.obs.send('GetStudioModeStatus');
+        this.studioMode = studioMode['studio-mode'];
+        if (this.studioMode) {
+            const previewScene = await this.obs.send('GetPreviewScene');
+            this.previewScene = this.scenes.findIndex(el => el.name == previewScene.name);
+        }
         // Get Desktop Audio and Mic/Aux
         const specialSourcesNames = await this.obs.send('GetSpecialSources')
         for (let key of Object.keys(specialSourcesNames)) {
@@ -152,14 +162,12 @@ class LaunchpadOBSController extends EventEmitter {
                 this.lp.setLayout(layout);
             } else if (this.lp.layout == Layout.SESSION) {
                 if (this.isSceneButton(x, y)) {
-                    this.changeScene(y);
-                } else if (y < 6) {
-                    this.obs.send('SetSceneItemProperties', {
-                        item: this.currentSceneSources[x + Math.floor(y / 2) * 8].name,
-                        visible: (y % 2 == 0)
-                    });
+                    this.changePreviewScene(y);
                 } else {
-                    this.nanoleaf.setSelectedEffect(this.favoriteEffects[x + (y - 6) * 8].name);
+                    this.obs.send('SetSceneItemProperties', {
+                        item: this.currentSceneSources[x + y * 8].name,
+                        visible: !this.currentSceneSources[x + y * 8].visible
+                    });
                 }
             } else if (this.lp.layout == Layout.ABLETON_LIVE) {
                 if (x == 8 && y == 0) {
@@ -180,7 +188,7 @@ class LaunchpadOBSController extends EventEmitter {
                 }
             } else if (this.lp.layout == Layout.USER_1) {
                 if (this.isSceneButton(x, y)) {
-                    this.changeScene(y);
+                    this.changePreviewScene(y);
                 } else {
                     const effect = this.nanoleafEffects.filter(e => e.pluginType == 'rhythm')[x + y * 8];
                     const color = effect.palette.find(c => c.brightness > 0);
@@ -277,7 +285,7 @@ class LaunchpadOBSController extends EventEmitter {
             this.setupSceneButtons();
             this.setupSampleButtons();
             this.setupSceneItemVisibilityButtons();
-            this.setupNanoleafEffectButtons();
+            // this.setupNanoleafEffectButtons();
         }
         if (layout == Layout.USER_1) {
             this.setupSceneButtons();
@@ -321,15 +329,16 @@ class LaunchpadOBSController extends EventEmitter {
         for (let i = 0; i < this.scenes.length; i++) {
             this.lp.setButtonColor(8, i, 64);
         }
+        this.lp.setButtonColor(8, this.previewScene, 4);
         this.lp.setButtonColor(8, this.currentScene, 72);
     }
 
     setupSceneItemVisibilityButtons() {
-        this.currentSceneSources.forEach((source, index) => {
+        for (let index = 0; index < 64; index++) {
             const x = index % 8;
-            const y = Math.floor(index / 8) * 2;
+            const y = Math.floor(index / 8);
             this.lp.setButtonColor(x, y, 0);
-        });
+        }
         this.currentSceneSources = [];
         const sources = this.getAllSceneSources();
         const addSource = (source) => {
@@ -361,14 +370,13 @@ class LaunchpadOBSController extends EventEmitter {
             return;
         }
         const source = this.currentSceneSources[index];
+        this.currentSceneSources[index].visible = isVisible;
         const x = index % 8;
-        const y = Math.floor(index / 8) * 2;
+        const y = Math.floor(index / 8);
         if (isVisible) {
-            this.lp.setButtonColor(x, y, this._getSourceTypeVisibilityColor(source.type));
-            this.lp.setButtonColor(x, y + 1, 0);
+            this.lp.pulseButtonColor(x, y, this._getSourceTypeVisibilityColor(source.type));
         } else {
-            this.lp.setButtonColor(x, y, 0);
-            this.lp.setButtonColor(x, y + 1, this._getSourceTypeVisibilityColor(source.type));
+            this.lp.setButtonColor(x, y, this._getSourceTypeVisibilityColor(source.type));
         }
     }
 
@@ -423,12 +431,26 @@ class LaunchpadOBSController extends EventEmitter {
     }
 
     changeScene(newScene) {
-        this.lp.setButtonColor(8, this.currentScene, 64);
-        this.lp.setButtonColor(8, newScene, 72);
         this.currentScene = newScene;
-        this.obs.send('SetCurrentScene', { "scene-name": this.scenes[this.currentScene].name }).then(() => {
-            this.setupSceneItemVisibilityButtons();
-        })
+        return this.obs.send('SetCurrentScene', { "scene-name": this.scenes[this.currentScene].name })
+            .then(() => {
+                this.setupSceneButtons();
+                this.setupSceneItemVisibilityButtons();
+            })
+    }
+
+    changePreviewScene(newScene) {
+        console.log(this.previewScene, this.currentScene, newScene);
+        if (!this.studioMode || newScene == this.previewScene) {
+            this.previewScene = newScene;
+            return this.changeScene(newScene);
+        }
+        this.previewScene = newScene;
+        return this.obs.send('SetPreviewScene', { "scene-name": this.scenes[this.previewScene].name })
+            .then(() => {
+                this.setupSceneButtons();
+                this.setupSceneItemVisibilityButtons();
+            })
     }
 
     playSampleAt(x, y) {
