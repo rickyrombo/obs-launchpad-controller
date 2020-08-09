@@ -435,10 +435,14 @@ class LaunchpadOBSController extends EventEmitter {
         }
     }
 
-    getAllSceneSources() { 
+    getAllSceneSources() {
+        let scene = this.currentScene;
+        if (this.studioMode) {
+            scene = this.previewScene;
+        }
         return [
             ...this.specialSources, 
-            ...this.scenes[this.currentScene].sources
+            ...this.scenes[scene].sources
         ]; 
     }
 
