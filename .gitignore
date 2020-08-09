@@ -62,6 +62,7 @@ typings/
 
 # webpack output
 dist/
+build/
 
 # make your own certs using OpenSSL or the included Powershell script (see readme)
 ssl-gen/
