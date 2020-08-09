@@ -134,8 +134,8 @@ class LaunchpadOBSController extends EventEmitter {
         this.scenes = response.scenes;
         const { name } = await this.obs.send('GetCurrentScene');
         this.currentScene = this.scenes.findIndex(el => el.name == name);
-        const studioMode = await this.obs.send('GetStudioModeStatus');
-        this.studioMode = studioMode['studio-mode'];
+        const { studioMode } = await this.obs.send('GetStudioModeStatus');
+        this.studioMode = studioMode;
         if (this.studioMode) {
             const previewScene = await this.obs.send('GetPreviewScene');
             this.previewScene = this.scenes.findIndex(el => el.name == previewScene.name);
@@ -254,6 +254,12 @@ class LaunchpadOBSController extends EventEmitter {
         this.obs.on('SceneItemRemoved', console.log);
         this.obs.on('SceneItemVisibilityChanged', (sceneItem) => {
             this.updateSceneItemVisibilityButton(sceneItem.itemName, sceneItem.itemVisible);
+        });
+        this.obs.on('StudioModeSwitched', ({newState}) => {
+            this.studioMode = newState;
+        });
+        this.obs.on('PreviewSceneChanged', ({sceneName}) => {
+            this.previewScene = this.scenes.findIndex(s => s.name == sceneName);
         });
     }
 
@@ -418,8 +424,14 @@ class LaunchpadOBSController extends EventEmitter {
                 return 66;
             case "group":
                 return 67;
-            default:
+            case "image_source":
                 return 68;
+            case "browser_source":
+                return 69;
+            case "text_gdiplus":
+                return 70;
+            default:
+                return 2;
         }
     }
 
