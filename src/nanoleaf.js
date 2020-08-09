@@ -38,17 +38,18 @@ class Nanoleaf {
   authenticate() {
     if (this.authToken) {
       console.log('Already authenticated');
-      return;
+      return Promise.resolve(this.authToken);
     }
     this.authToken = localStorage.getItem('nanoleaf-auth-token');
     if (this.authToken) {
       console.log('Authentication loaded from local storage', this.authToken);
-      return;
+      return Promise.resolve(this.authToken);
     }
-    this.fetch('new', { method: 'POST' }).then((res) => {
+    return this.fetch('new', { method: 'POST' }).then((res) => {
       console.log('Got new authentication token', res.body.auth_token)
       this.authToken = res.body.auth_token;
       localStorage.setItem('nanoleaf-auth-token', this.authToken);
+      return this.authToken;
     });
   }
 
