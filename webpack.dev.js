@@ -6,9 +6,9 @@ module.exports = merge(common, {
     mode: 'development',
     devtool: 'inline-source-map',
     devServer: {
-        port: 443,
-        contentBase: './build',
-        index: 'index.html',
-        https: HttpsSettings
+        // port: 443,
+        // contentBase: './build',
+        // index: 'index.html',
+        // https: HttpsSettings
     }
 })
