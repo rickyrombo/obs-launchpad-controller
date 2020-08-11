@@ -5,14 +5,10 @@
   "private": true,
   "main": "app/main.js",
   "scripts": {
-    "test": "echo \"Error: no test specified\" && exit 1",
-    "build": "webpack --config webpack.prod.js",
-    "start": "concurrently \"yarn server\" \"yarn electron\"",
-    "server": "webpack-dev-server --config webpack.dev.js",
-    "watch": "webpack --watch",
-    "electron": "electron .",
-    "dist": "electron-builder",
-    "pack": "electron-builder --dir"
+    "dev": "electron-webpack dev",
+    "compile": "electron-webpack",
+    "dist": "yarn compile && electron-builder",
+    "dist:dir": "yarn dist --dir"
   },
   "author": "Marcus Pasell",
   "license": "MIT",
@@ -59,17 +55,13 @@
     "webpack-merge": "^4.2.2"
   },
   "build": {
-    "appId": "launchpad-utility",
+    "appId": "com.rickyrombo.launchpad",
     "productName": "Launchpad Utility",
     "win": {
       "target": "portable",
       "icon": "assets/icon.ico",
       "legalTrademarks": "© 2020 Marcus Pasell All Rights Reserved"
     },
-    "files": [
-      "build/**/*",
-      "app/**/*"
-    ],
     "directories": {
       "buildResources": "assets"
     }
