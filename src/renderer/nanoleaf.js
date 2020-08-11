@@ -54,17 +54,13 @@ class Nanoleaf {
   }
 
   getState() {
-    return fetch(this._getFullApiPath('state')).then((res) => {
-      console.log('getstate', res.status, res.statusText)
-      return res.json();
-    }).then(json => {
-      console.log(json);
-      return json;
+    return this.fetch('state').then((res) => {
+      console.log('getstate', res.status, res.statusText, res.body);
     })
   }
 
   setState(state) {
-    return fetch(this._getFullApiPath('state'), { method: 'PUT', body: JSON.stringify(state) });
+    return this.fetch('state', { method: 'PUT', body: state });
   }
 
   async getEffectsList() {

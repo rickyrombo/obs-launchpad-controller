@@ -4,8 +4,6 @@ import { positionToIndex, indexToPosition, getFileFromSandbox } from './helpers'
 import { EventEmitter } from 'events';
 import Nanoleaf from './nanoleaf';
 
-
-
 function toRGB(hue, saturation, brightness) {
     /* accepts parameters
     * h  Object = {h:x, s:y, v:z}
@@ -47,6 +45,14 @@ function toRGB(hue, saturation, brightness) {
 }
 
 const isAudioSource = (source) => source.type ? source.type.search(/input|wasapi/g) > -1 : source.sourceType.search(/input|wasapi/g) > -1;
+
+const Page = {
+    SOURCE_VISIBILITY: 0,
+    NANOLEAF: 1,
+    MIXER: 3,
+    SOURCE_VOLUME_FADERS: 4,
+    NANOLEAF_FADERS: 5
+};
 
 class LaunchpadOBSController extends EventEmitter {
     constructor(config) {
@@ -149,18 +155,17 @@ class LaunchpadOBSController extends EventEmitter {
                 this.specialSources.push({...source, ...volumeInfo})
             }
         }
-        await this.setupLayout(this.lp.layout)
+        await this.setupPage(Page.SOURCE_VISIBILITY);
     }
 
     setupLaunchpadListeners() {
         let interval;
-        this.lp.on(Events.BUTTON_PRESSED, ({x, y, }) => {
+        this.lp.on(Events.BUTTON_PRESSED, ({x, y, note}) => {
             clearInterval(interval);
             if (this.isLayoutButton(x, y)) {
-                const layout = x - 4;
-                this.lp.setAllColor(0);
-                this.lp.setLayout(layout);
-            } else if (this.lp.layout == Layout.SESSION) {
+                const page = x - 4;
+                this.setPage(page);
+            } else if (this.page === Page.SOURCE_VISIBILITY) {
                 if (this.isSceneButton(x, y)) {
                     this.changePreviewScene(y);
                 } else {
@@ -174,25 +179,39 @@ class LaunchpadOBSController extends EventEmitter {
                         visible: !this.currentSceneSources[x + y * 8].visible
                     });
                 }
-            } else if (this.lp.layout == Layout.ABLETON_LIVE) {
-                if (x == 8 && y == 0) {
-                    this.lp.setLayout(Layout.VOLUME_FADERS);
+            } else if (this.page === Page.MIXER) {
+                if (x === 8 && y === 0) {
+                    this.setPage(Page.SOURCE_VOLUME_FADERS);
                 } else if (x < 8 && y == 5) {
-                    const source = this.getAllSceneSources().filter(isAudioSource)[x];
-                    this.obs.send('SetMute', { source: source.name, mute: !source.muted });
+                    const source = this.getAllSceneSources().filter(isAudioSource)[x];    
+                    let sceneName = this.scenes[this.currentScene].name;
+                    if (this.studioMode) {
+                        sceneName = this.scenes[this.previewScene].name;
+                    }
+                    this.obs.send('SetMute', { 'scene-name': sceneName, source: source.name, mute: !source.muted });
                 } else if (x == 8 && y == 5) {
+                    let targetMute = true;
+                    if (this.getAllSceneSources().filter(isAudioSource).every(s => s.muted)) {
+                        targetMute = false;
+                    }    
+                    let sceneName = this.scenes[this.currentScene].name;
+                    if (this.studioMode) {
+                        sceneName = this.scenes[this.previewScene].name;
+                    }
                     for (let source of this.getAllSceneSources().filter(isAudioSource)) {
-                        this.obs.send('SetMute', { source: source.name, mute: true })
+                        this.obs.send('SetMute', { 'scene-name': sceneName, source: source.name, mute: targetMute })
                     }
                 } else if (x == 8 && y == 7) {
                     this.obs.send('StartStopRecording');
                 }
-            } else if (this.lp.layout == Layout.VOLUME_FADERS) {
-                if (x == 8 && y == 0) {
-                    this.lp.setLayout(Layout.ABLETON_LIVE);
+            } else if (this.page === Page.SOURCE_VOLUME_FADERS) {
+                if (x === 8 && y === 0) {
+                    this.setPage(Page.MIXER);
                 }
-            } else if (this.lp.layout == Layout.USER_1) {
-                if (this.isSceneButton(x, y)) {
+            } else if (this.page === Page.NANOLEAF) {
+                if ((x == 0 || x == 1) && y == -1) {
+                    this.nanoleaf.setState({brightness: {increment: 5 * (x * -2 + 1)}});
+                } else if (this.isSceneButton(x, y)) {
                     this.changePreviewScene(y);
                 } else {
                     const effect = this.nanoleafEffects.filter(e => e.pluginType == 'rhythm')[x + y * 8];
@@ -215,7 +234,7 @@ class LaunchpadOBSController extends EventEmitter {
         })
 
         this.lp.on(Events.LAYOUT_CHANGED, (layout) => {
-            this.setupLayout(layout);
+            // this.setupLayout(layout);
         });
 
         this.lp.on(Events.FADER_CHANGED, (fader, value) => {
@@ -231,7 +250,7 @@ class LaunchpadOBSController extends EventEmitter {
 
     setupOBSListeners() {
         this.obs.on('SourceMuteStateChanged', ({sourceName, muted}) => {
-            if (this.updateStoredSource(sourceName, { muted }) && this.lp.layout == Layout.ABLETON_LIVE) {
+            if (this.updateStoredSource(sourceName, { muted }) && this.page === Page.MIXER) {
                 this.lp.setButtonColor(this.getAudioSourceIndex(sourceName), 5, muted ? 5: 64)
             }
         });
@@ -268,15 +287,29 @@ class LaunchpadOBSController extends EventEmitter {
         });
     }
 
+    setPage(page) {
+        if (page !== this.page) {
+            this.lp.setAllColor(0);
+            this.page = page;
+            this.setupPage(page);
+        }
+    }
+
+    refreshPage = () => {
+        this.lp.setAllColor(0);
+        this.setupPage(this.page);
+    }
+
     updateStoredSource(sourceName, update) {
+        let scene = this.studioMode ? this.previewScene : this.currentScene;
         let i = this.specialSources.findIndex(s => s.name == sourceName);
         if (i > -1) {
             this.specialSources[i] = {...this.specialSources[i], ...update };
             return true;
         }
-        i = this.scenes[this.currentScene].sources.findIndex(s => s.name == sourceName);
+        i = this.scenes[scene].sources.findIndex(s => s.name == sourceName);
         if (i > -1) {
-            this.scenes[this.currentScene].sources[i] = { ...this.scenes[this.currentScene].sources[i], ...update };
+            this.scenes[scene].sources[i] = { ...this.scenes[scene].sources[i], ...update };
             return true;
         }
         console.error('Could not find sourceName', sourceName);
@@ -287,53 +320,66 @@ class LaunchpadOBSController extends EventEmitter {
         return this.getAllSceneSources().filter(isAudioSource).findIndex(s => s.name == sourceName)
     }
 
-    async setupLayout(layout) {
-        this.lp.setButtonColor(4, -1, 0);
-        this.lp.setButtonColor(5, -1, 0);
-        this.lp.setButtonColor(6, -1, 0);
-        this.lp.setButtonColor(7, -1, 0);
-        if (layout == Layout.SESSION) {
-            this.setupSceneButtons();
-            this.setupSampleButtons();
-            this.setupSceneItemVisibilityButtons();
-            // this.setupNanoleafEffectButtons();
+    async setupPage(page) {
+        switch (page) {
+            case Page.SOURCE_VISIBILITY:
+                this.setupSourceVisibilityPage();
+                break;
+            case Page.NANOLEAF:
+                await this.setupNanoleafPage();
+                break;
+            case Page.MIXER:
+                await this.setupMixerPage();
+                break;
+            case Page.SOURCE_VOLUME_FADERS:
+                this.setupSourcesVolumesPage();
+                break;
         }
-        if (layout == Layout.USER_1) {
-            this.setupSceneButtons();
-            if (this.nanoleafEffects.length == 0) {
+        this.lp.setButtonColor(page + 4, -1, 9);
+    }
+
+    setupSourceVisibilityPage() {
+        this.lp.setLayout(Layout.SESSION);
+        this.setupSceneButtons();
+        this.setupSceneItemVisibilityButtons();
+    }
+
+    async setupNanoleafPage() {
+        this.lp.setLayout(Layout.USER_1);
+        this.setupSceneButtons();
+        await this.setupNanoleafRhythmButtons();
+    }
+
+    async setupMixerPage() {
+        this.lp.setLayout(Layout.ABLETON_LIVE);
+        this.lp.setButtonColor(8, 0, 2);
+        this.lp.setButtonColor(8, 5, 2);
+        this.lp.setButtonColor(8, 7, 2);
+        await this.setupMutes();
+    }
+
+    setupSourcesVolumesPage() {
+        this.lp.setLayout(Layout.VOLUME_FADERS);
+        this.lp.setButtonColor(7, -1, 9);
+        this.lp.setButtonColor(8, 0, 64);
+        this.setupVolumeFaders();
+    }
+
+    async setupNanoleafRhythmButtons() {
+        if (this.nanoleafEffects.length == 0) {
+            try {
                 this.nanoleafEffects = await this.nanoleaf.getAllEffects();
+            } catch (err) {
+                console.error(err);
+                return;
             }
-            
-            this.nanoleafEffects.filter(e => e.pluginType === 'rhythm').forEach(async(effect, i) => {
-                const color = effect.palette.find(c => c.brightness > 0);
-                const { hue, saturation, brightness } = color;
-                const rgb = toRGB(hue, saturation, brightness);
-                this.lp.setButtonColorRGB(i % 8, Math.floor(i/8), rgb);
-            })
-            // let i = 0;
-            // setInterval(() => {
-            //     console.log('updating colors', i)
-            //     i = (i + 1) % this.nanoleafEffects.length;
-            //     this.nanoleafEffects.forEach(async(effect, i) => {
-            //         const { hue, saturation, brightness } = effect.palette[Math.floor(Math.random() * effect.palette.length)];
-            //         const rgb = hslToRgb(hue, saturation/100.0, brightness/100.0);
-            //         this.lp.setButtonColorRGB(i % 8, Math.floor(i/8), rgb);
-            //     })
-            // }, 10000);
         }
-        if (layout == Layout.ABLETON_LIVE) {
-            this.lp.setButtonColor(8, 0, 2);
-            this.lp.setButtonColor(8, 5, 2);
-            this.lp.setButtonColor(8, 7, 2);
-            await this.setupMutes();
-        }
-        if (layout == Layout.VOLUME_FADERS) {
-            this.lp.setButtonColor(7, -1, 9);
-            this.lp.setButtonColor(8, 0, 64);
-            this.setupVolumeFaders();
-        } else {
-            this.lp.setButtonColor(layout + 4, -1, 9);
-        }
+        this.nanoleafEffects.filter(e => e.pluginType === 'rhythm').forEach(async(effect, i) => {
+            const color = effect.palette.find(c => c.brightness > 0);
+            const { hue, saturation, brightness } = color;
+            const rgb = toRGB(hue, saturation, brightness);
+            this.lp.setButtonColorRGB(i % 8, Math.floor(i/8), rgb);
+        })
     }
 
     setupSceneButtons() {
@@ -370,12 +416,6 @@ class LaunchpadOBSController extends EventEmitter {
                 addSource(source);
             }
         });
-    }
-
-    setupNanoleafEffectButtons() {
-        this.favoriteEffects.forEach((effect, index) => {
-            this.lp.setButtonColor(index % 8, 6 + Math.floor(index / 8), effect.color);
-        })
     }
 
     updateSceneItemVisibilityButton(sourceName, isVisible) {
@@ -417,7 +457,14 @@ class LaunchpadOBSController extends EventEmitter {
         for (let source of this.getAllSceneSources()) {
             if (!isAudioSource(source)) continue;
             if (typeof source.muted == "undefined") {
-                source = await this.obs.send('GetMute', {source: source.name});
+                let sceneName = this.scenes[this.currentScene].name;
+                if (this.studioMode) {
+                    sceneName = this.scenes[this.previewScene].name;
+                }
+                source = await this.obs.send('GetMute', {
+                    'scene-name': sceneName,
+                    source: source.name
+                });
             }
             this.lp.setButtonColor(i++, 5, source.muted ? 5 : 64);
         }
@@ -458,10 +505,7 @@ class LaunchpadOBSController extends EventEmitter {
     changeScene(newScene) {
         this.currentScene = newScene;
         return this.obs.send('SetCurrentScene', { "scene-name": this.scenes[this.currentScene].name })
-            .then(() => {
-                this.setupSceneButtons();
-                this.setupSceneItemVisibilityButtons();
-            })
+            .then(this.refreshPage);
     }
 
     changePreviewScene(newScene) {
@@ -472,10 +516,7 @@ class LaunchpadOBSController extends EventEmitter {
         }
         this.previewScene = newScene;
         return this.obs.send('SetPreviewScene', { "scene-name": this.scenes[this.previewScene].name })
-            .then(() => {
-                this.setupSceneButtons();
-                this.setupSceneItemVisibilityButtons();
-            })
+            .then(this.refreshPage);
     }
 
     playSampleAt(x, y) {
@@ -500,7 +541,7 @@ class LaunchpadOBSController extends EventEmitter {
                     audio.play()
                     this.lp.pulseButtonColor(x, y, cell.color);
                     audio.onpause = () => {               
-                        if (this.lp.layout == Layout.SESSION)     
+                        //if (sampler)     
                             this.lp.setButtonColor(x, y, cell.color);
                     }
                 }

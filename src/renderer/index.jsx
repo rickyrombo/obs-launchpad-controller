@@ -17,12 +17,7 @@ function App() {
     const [rememberPassword, setRememberPassword] = useState(true);
 
     const controller = new LaunchpadOBSController(store.getState());
-    window.addEventListener('beforeinstallprompt', (e) => {
-        setDeferredPrompt(e);
-    });
-    window.addEventListener('beforeunload', () => {
-        controller.lp.setAllColor(0);
-    })
+    window.controller = window.controller || controller;
     controller.on('LaunchpadStateChanged', ({state}) =>
         setLaunchpadStatus(`Launchpad ${state}`)
     );
@@ -78,6 +73,7 @@ function App() {
             <pre style={{color: 'red', fontWeight: 'bold'}}>{error || "\n"}</pre>
             <pre>{connected ? "OBS connected\n" : ''}</pre>
             <pre>{launchpadStatus}</pre>
+            <button onClick={() => controller.nanoleaf.authenticate()}>ReAuth to Nanoleaf</button>
         </div>
     );
 }

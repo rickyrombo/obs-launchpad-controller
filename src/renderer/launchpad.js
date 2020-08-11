@@ -194,6 +194,13 @@ class Launchpad extends EventEmitter {
                 y: Math.floor((GRID_NOTE_START - note) / 10)
             }
         } else if (this.layout == Layout.USER_1) {
+            // Special case for scene buttons
+            if (note >= 100) {
+                return {
+                    x: 8,
+                    y: note - 100
+                };
+            }
             return {
                 x: note % 4 + 4 * Math.floor(note / 68),
                 y: note >= 100 ? note - 100 : Math.floor((31 - (note - 36) % 32) / 4)
