@@ -6,10 +6,6 @@ if (!fs.existsSync('./ssl-gen/https-config.gen.js')) {
 }
 
 module.exports = {
-  entry: {
-    setup: './src/entry/setup.jsx',
-    index: './src/entry/index.jsx',
-  },
   module: {
     rules: [
       {
@@ -26,27 +22,9 @@ module.exports = {
   resolve: {
     extensions: ['*', '.js', '.jsx']
   },
-  plugins: [
-    new HtmlWebpackPlugin({
-      title: 'Setup',
-      template: 'src/index.html',
-      filename: 'setup.html',
-      chunks: ['setup']
-    }),
-    new HtmlWebpackPlugin({
-      title: 'Main',
-      template: 'src/index.html',
-      filename: 'index.html',
-      chunks: ['index']
-    }),
-  ],
   node: {
     fs: 'empty',
     net: 'empty',
     tls: 'empty'
-  },
-  output: {
-    filename: '[name].bundle.js',
-    path: path.resolve(__dirname, 'build'),
-  },
+  }
 };

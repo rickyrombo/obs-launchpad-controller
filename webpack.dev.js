@@ -10,5 +10,5 @@ module.exports = merge(common, {
         contentBase: './build',
         index: 'index.html',
         https: HttpsSettings
-    },
+    }
 })
