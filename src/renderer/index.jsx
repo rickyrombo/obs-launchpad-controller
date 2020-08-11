@@ -1,9 +1,9 @@
-import LaunchpadOBSController from '../launchpad-obs-controller'
 import React, { useState } from 'react'
 import ReactDOM from 'react-dom'
-import { store, persistor } from '../helpers/store'
 import { Provider } from 'react-redux'
 import { PersistGate } from 'redux-persist/es/integration/react'
+import LaunchpadOBSController from './launchpad-obs-controller'
+import { store, persistor } from './helpers/store'
 
 let storedPassword = localStorage.getItem('obs-password');
 storedPassword = storedPassword ? storedPassword : '';
@@ -88,4 +88,4 @@ ReactDOM.render(
         <App />
     </PersistGate>
 </Provider>,
-    document.getElementById('root'))
+    document.getElementById('app'))
