@@ -164,7 +164,12 @@ class LaunchpadOBSController extends EventEmitter {
                 if (this.isSceneButton(x, y)) {
                     this.changePreviewScene(y);
                 } else {
+                    let sceneName = this.scenes[this.currentScene].name;
+                    if (this.studioMode) {
+                        sceneName = this.scenes[this.previewScene].name;
+                    }
                     this.obs.send('SetSceneItemProperties', {
+                        'scene-name': sceneName,
                         item: this.currentSceneSources[x + y * 8].name,
                         visible: !this.currentSceneSources[x + y * 8].visible
                     });
@@ -346,10 +351,14 @@ class LaunchpadOBSController extends EventEmitter {
             this.lp.setButtonColor(x, y, 0);
         }
         this.currentSceneSources = [];
+        let sceneName = this.scenes[this.currentScene].name;
+        if (this.studioMode) {
+            sceneName = this.scenes[this.previewScene].name;
+        }
         const sources = this.getAllSceneSources();
         const addSource = (source) => {
             this.currentSceneSources.push(source);
-            this.obs.send('GetSceneItemProperties', { item: source.name }).then(properties => {
+            this.obs.send('GetSceneItemProperties', { 'scene-name': sceneName, item: source.name }).then(properties => {
                 this.updateSceneItemVisibilityButton(source.name, properties.visible);
             })
             if (source.type == "group") {
